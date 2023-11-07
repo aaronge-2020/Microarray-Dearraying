@@ -1,3 +1,2 @@
-
-Coordinate_model.h5
-unet_tma.hdf5
+*.h5
+*.hdf5
