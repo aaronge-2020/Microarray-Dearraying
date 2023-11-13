@@ -30,44 +30,43 @@ image_dir = './TMA_WSI_Padded_PNGs'
 label_dir = './TMA_WSI_Labels_updated'
 images, masks = load_images_and_labels(image_dir, label_dir)
 
+from tensorflow.keras.layers import LeakyReLU
 
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, concatenate, UpSampling2D, BatchNormalization, Activation
-def conv_block(input_tensor, num_filters, kernel_size=3, do_batch_norm=True):
-    # A conv block consists of two convolutions, each followed by a batch normalization and a relu activation.
+def conv_block(input_tensor, num_filters, kernel_size=3, do_batch_norm=True, leaky_relu_alpha=0.01):
+    # A conv block consists of two convolutions, each followed by a batch normalization and a Leaky ReLU activation.
     x = Conv2D(num_filters, kernel_size, padding='same', kernel_initializer='he_normal')(input_tensor)
     if do_batch_norm:
         x = BatchNormalization()(x)
-    x = Activation('relu')(x)
+    x = LeakyReLU(alpha=leaky_relu_alpha)(x)
     
     x = Conv2D(num_filters, kernel_size, padding='same', kernel_initializer='he_normal')(x)
     if do_batch_norm:
         x = BatchNormalization()(x)
-    x = Activation('relu')(x)
+    x = LeakyReLU(alpha=leaky_relu_alpha)(x)
     return x
 
-def unet(input_size=(1024, 1024, 3), num_filters=32, depth=3, dropout=0.5, batch_norm=True):
+def unet(input_size=(1024, 1024, 3), num_filters=32, depth=3, dropout=0.5, batch_norm=True, leaky_relu_alpha=0.01):
     # INPUT LAYER
     inputs = Input(input_size)
     # CONTRACTING PATH
     conv_blocks = []
     x = inputs
     for i in range(depth):
-        x = conv_block(x, num_filters * (2**i), do_batch_norm=batch_norm)
+        x = conv_block(x, num_filters * (2**i), do_batch_norm=batch_norm, leaky_relu_alpha=leaky_relu_alpha)
         conv_blocks.append(x)
         x = MaxPooling2D(pool_size=(2, 2))(x)
         if dropout:
             x = Dropout(dropout)(x)
 
     # BOTTLENECK
-    x = conv_block(x, num_filters * (2**(depth)), do_batch_norm=batch_norm)
+    x = conv_block(x, num_filters * (2**(depth)), do_batch_norm=batch_norm, leaky_relu_alpha=leaky_relu_alpha)
     
     # EXPANSIVE PATH
     for i in reversed(range(depth)):
         num_filters_exp = num_filters * (2**i)
         x = UpSampling2D(size=(2, 2))(x)
         x = concatenate([x, conv_blocks[i]], axis=3)
-        x = conv_block(x, num_filters_exp, do_batch_norm=batch_norm)
+        x = conv_block(x, num_filters_exp, do_batch_norm=batch_norm, leaky_relu_alpha=leaky_relu_alpha)
 
     # FINAL CONVOLUTION
     output = Conv2D(1, 1, activation='sigmoid')(x)
@@ -75,11 +74,25 @@ def unet(input_size=(1024, 1024, 3), num_filters=32, depth=3, dropout=0.5, batch
 
     return model
 
+
+
 from tensorflow.keras.optimizers.legacy import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.models import load_model
 from tensorflow.keras import backend as K
 import os
+
+from tensorflow.keras.callbacks import LearningRateScheduler
+
+# Define a learning rate schedule (example: decrease learning rate by half every 10 epochs)
+def lr_schedule(epoch, lr):
+    if epoch % 5 == 0 and epoch != 0:
+        lr = lr / 2
+    return lr
+
+# Add this to your callbacks in the training function
+lr_scheduler = LearningRateScheduler(lr_schedule, verbose=1)
+
 
 log_dir = "./tensorboard_logs"
 
@@ -93,7 +106,7 @@ def weighted_binary_crossentropy(zero_weight, one_weight):
     return loss
 
 # You would then compile your model with this loss, adjusting the weights as needed for your imbalance
-def train_unet(model, images, masks, epochs=5, batch_size=1, checkpoint_path='pixel_cores.hdf5'):
+def train_unet(model, images, masks, epochs=20, batch_size=1, checkpoint_path='pixel_cores.hdf5'):
     # Define the custom loss function
     custom_loss = weighted_binary_crossentropy(zero_weight=1, one_weight=4000)
 
@@ -106,14 +119,14 @@ def train_unet(model, images, masks, epochs=5, batch_size=1, checkpoint_path='pi
         print("No checkpoint found. Starting training from scratch.")
 
     # Compile the model with the custom loss function
-    model.compile(optimizer=Adam(learning_rate=1e-4), loss=custom_loss, metrics=['AUC'])
+    model.compile(optimizer=Adam(learning_rate=1e-4), loss=custom_loss, metrics=['AUC', 'accuracy', 'Precision', 'Recall'])
     model_checkpoint = ModelCheckpoint(checkpoint_path, monitor='val_loss', verbose=1, save_best_only=True)
     
     # Define the TensorBoard callback
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
     # Fit the model
-    history = model.fit(images, masks, batch_size=batch_size, epochs=epochs, verbose=1, validation_split=0.1, callbacks=[model_checkpoint, tensorboard_callback])
+    history = model.fit(images, masks, batch_size=batch_size, epochs=epochs, verbose=1, validation_split=0.1, callbacks=[model_checkpoint, tensorboard_callback, lr_scheduler])
     
     return history
 
