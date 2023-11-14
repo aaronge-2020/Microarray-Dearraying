@@ -82,6 +82,12 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras import backend as K
 import os
 
+from tensorflow.keras.optimizers.legacy import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow.keras.models import load_model
+from tensorflow.keras import backend as K
+import os
+
 from tensorflow.keras.callbacks import LearningRateScheduler
 
 # Define a learning rate schedule (example: decrease learning rate by half every 10 epochs)
@@ -96,19 +102,27 @@ lr_scheduler = LearningRateScheduler(lr_schedule, verbose=1)
 
 log_dir = "./tensorboard_logs"
 
-def weighted_binary_crossentropy(zero_weight, one_weight):
-    def loss(y_true, y_pred):
-        bce = K.binary_crossentropy(y_true, y_pred)
-        weight_vector = y_true * one_weight + (1. - y_true) * zero_weight
-        weighted_bce = weight_vector * bce
 
-        return K.mean(weighted_bce)
-    return loss
+def focal_loss(gamma=2., alpha=.25):
+    def focal_loss_fixed(y_true, y_pred):
+        pt_1 = tf.where(tf.equal(y_true, 1), y_pred, tf.ones_like(y_pred))
+        pt_0 = tf.where(tf.equal(y_true, 0), y_pred, tf.zeros_like(y_pred))
+
+        # Clip the predicted values to prevent log(0) error.
+        eps = 1e-12
+        pt_1 = tf.clip_by_value(pt_1, eps, 1. - eps)
+        pt_0 = tf.clip_by_value(pt_0, eps, 1. - eps)
+
+        return -tf.reduce_sum(alpha * tf.pow(1. - pt_1, gamma) * tf.math.log(pt_1)) \
+               -tf.reduce_sum((1 - alpha) * tf.pow(pt_0, gamma) * tf.math.log(1. - pt_0))
+
+    return focal_loss_fixed
 
 # You would then compile your model with this loss, adjusting the weights as needed for your imbalance
-def train_unet(model, images, masks, epochs=20, batch_size=1, checkpoint_path='pixel_cores.hdf5'):
+def train_unet(model, images, masks, epochs=20, batch_size=3, checkpoint_path='pixel_cores.hdf5'):
+    
     # Define the custom loss function
-    custom_loss = weighted_binary_crossentropy(zero_weight=1, one_weight=4000)
+    custom_loss = focal_loss(gamma=2.0, alpha=0.25)
 
     # Check if a previous checkpoint exists
     if os.path.exists(checkpoint_path):
@@ -133,3 +147,55 @@ def train_unet(model, images, masks, epochs=20, batch_size=1, checkpoint_path='p
 
 # Using the functions
 history = train_unet(model, images, masks)
+
+
+# Define the loss functions
+def smooth_l1_loss(sigma=3.0):
+    sigma_squared = sigma ** 2
+    
+    def smooth_l1_loss_fixed(y_true, y_pred):
+        regression_diff = y_true - y_pred
+        regression_diff = tf.abs(regression_diff)
+        regression_loss = tf.where(
+            tf.less(regression_diff, 1.0 / sigma_squared),
+            0.5 * sigma_squared * tf.pow(regression_diff, 2),
+            regression_diff - 0.5 / sigma_squared
+        )
+        # Sum over the last dimension to get the total loss for each bounding box
+        regression_loss = tf.reduce_sum(regression_loss, axis=-1)
+        # Compute the mean loss over all the bounding boxes
+        return tf.reduce_mean(regression_loss)
+    
+    return smooth_l1_loss_fixed
+
+
+def focal_loss(gamma=2.0, alpha=0.25):
+    def focal_loss_fixed(y_true, y_pred):
+        # Add epsilon to prevent log(0)
+        epsilon = tf.keras.backend.epsilon()
+        y_pred = tf.clip_by_value(y_pred, epsilon, 1. - epsilon)
+
+        cross_entropy = -y_true * tf.math.log(y_pred)
+        weights = alpha * tf.pow(1 - y_pred, gamma)
+        
+        # Reduce the last dimension to get the focal loss for each class
+        focal_loss = weights * cross_entropy
+        focal_loss = tf.reduce_sum(focal_loss, axis=-1)
+        # Compute the mean loss over all the classes
+        return tf.reduce_mean(focal_loss)
+    
+    return focal_loss_fixed
+
+
+# Compile the model with the custom loss and an optimizer
+model.compile(optimizer='adam',
+              loss={
+                  'boxes_output': smooth_l1_loss(),
+                  'class_output': focal_loss()
+              },
+              metrics={'class_output': 'accuracy'})  # Assuming 'accuracy' is a suitable metric for your classification
+
+
+# Fit the model on the prepared dataset
+# The dataset should output a tuple of (images, {'boxes_output': boxes, 'class_output': class_labels})
+history = model.fit(dataset, epochs=10, steps_per_epoch=100)
