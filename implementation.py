@@ -93,33 +93,39 @@ num_boxes = 250  # Maximum number of boxes per image, adjust as needed
 
 dataset = prepare_dataset(images, boxes, batch_size, num_boxes=num_boxes)
 
-import tensorflow as tf
-from tensorflow.keras import layers, models
-def create_object_detection_model(num_boxes):
-    backbone = tf.keras.applications.MobileNetV2(input_shape=[512, 512, 3], include_top=False, weights='imagenet')
-    backbone.trainable = False
+# Simplest model architecture
 
-    x = backbone.output
-    x = layers.Conv2D(256, kernel_size=(3, 3), activation='relu', padding='same')(x)
-    x = layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same')(x)
+from tensorflow.keras import layers, models
+
+def create_custom_model(input_shape, num_boxes):
+    inputs = layers.Input(shape=input_shape)
+
+    # Simplified model architecture
+    x = layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(inputs)
+    x = layers.MaxPooling2D(pool_size=(2, 2))(x)
     x = layers.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same')(x)
-    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+    x = layers.Flatten()(x)
+    x = layers.Dense(128, activation='relu')(x)
 
     # Output layer for bounding box predictions
-    # The output is reshaped to [batch_size, num_boxes, 4]
     boxes_output_flat = layers.Dense(num_boxes * 4, activation='sigmoid', name='boxes_output')(x)
     boxes_output = layers.Reshape((num_boxes, 4))(boxes_output_flat)
 
-    model = models.Model(inputs=backbone.input, outputs=boxes_output)
+    model = models.Model(inputs=inputs, outputs=boxes_output)
     
     return model
 
+# Example usage
+input_shape = (512, 512, 3)
+num_boxes = 250
 
-model = create_object_detection_model(num_boxes)
-
+model = create_custom_model(input_shape, num_boxes)
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, LearningRateScheduler
 import datetime
 import os
+from tensorflow.keras.callbacks import EarlyStopping
+
 
 # Define the Smooth L1 Loss Function
 def smooth_l1_loss(sigma=3.0):
@@ -137,6 +143,8 @@ def smooth_l1_loss(sigma=3.0):
         return tf.reduce_mean(regression_loss)
     
     return smooth_l1_loss_fixed
+
+    
 # Compile the Model with the Custom Loss
 model.compile(optimizer='adam',
               loss=smooth_l1_loss(),  # Only use smooth L1 loss for bounding box predictions
@@ -160,7 +168,7 @@ checkpoint_callback = ModelCheckpoint(
 
 # Define a Learning Rate Schedule
 def scheduler(epoch, lr):
-    if epoch < 10:
+    if epoch < 25:
         return lr
     elif epoch%10 == 0:
         return lr * tf.math.exp(-0.1)
@@ -169,10 +177,52 @@ def scheduler(epoch, lr):
 
 learning_rate_callback = LearningRateScheduler(scheduler)
 
+early_stopping_callback = EarlyStopping(monitor='val_loss', patience=50, mode='min')
 
-# Fit the Model on the Prepared Dataset
-# The dataset should output a tuple of (images, boxes)
-history = model.fit(
-    dataset,
-    epochs=500,
-    callbacks=[tensorboard_callback, checkpoint_callback, learning_rate_callback])  # Add the callbacks here
+# Initialize a list to store the results
+results = []
+
+
+# Split the dataset into 10 folds
+kf = KFold(n_splits=10, shuffle=True, random_state=42)
+
+fold_no = 1
+for train_index, val_index in kf.split(images):
+    train_images, val_images = images[train_index], images[val_index]
+    train_boxes, val_boxes = [boxes[i] for i in train_index], [boxes[i] for i in val_index]
+
+    # Prepare the training and validation datasets
+    train_dataset = prepare_dataset(train_images, train_boxes, batch_size, num_boxes=num_boxes)
+    val_dataset = prepare_dataset(val_images, val_boxes, batch_size, num_boxes=num_boxes)
+
+    # Create a new instance of the model (to reset weights)
+    model = create_custom_model(num_boxes)
+
+    # Compile the model
+    model.compile(optimizer='adam', loss='mse', metrics=['mean_squared_error'])
+
+    print(f'Training for fold {fold_no} ...')
+
+    # Fit the model
+    history = model.fit(
+        train_dataset,
+        validation_data=val_dataset,
+        epochs=350,
+        callbacks=[
+            tensorboard_callback, 
+            checkpoint_callback, 
+            learning_rate_callback, 
+            early_stopping_callback  # Add the early stopping callback here
+        ]
+    )
+
+
+    # Save the model
+    model.save(f'model_fold_{fold_no}.h5')
+
+    # Log the results
+    val_loss, val_mse = model.evaluate(val_dataset)
+    results.append({'fold': fold_no, 'val_loss': val_loss, 'val_mse': val_mse})
+
+    # Increase the fold number
+    fold_no += 1
