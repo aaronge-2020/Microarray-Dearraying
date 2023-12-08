@@ -1,4 +1,41 @@
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Delaunay Triangulation Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@12.2.0/lib/browser/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6.0.4/dist/d3-delaunay.min.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script type="module" src="./delaunay_triangulation.js"></script>
+</head>
+<body>
 
-<script type="module" src="./index.js"></script>
+    <input type="file" id="fileInput" name="JSON File"/>
+
+
+
+    <div>
+        <h3>Original Cores</h3>
+        <svg width="800" height="800" id="svg-cores"></svg>
+    </div>
+    <div>
+        <h3>Delaunay Triangulation</h3>
+        <svg width="800" height="800" id="svg-delaunay"></svg>
+    </div>
+    <div>
+        <h3>Length Filtered Edges</h3>
+        <svg width="800" height="800" id="svg-length-filtered"></svg>
+    </div>
+    <div>
+        <h3>Angle Filtered Edges</h3>
+        <svg width="800" height="800" id="svg-angle-filtered"></svg>
+    </div>
+    <div>
+        <h3>Limited Connections</h3>
+        <svg width="800" height="800" id="svg-limited-connections"></svg>
+    </div>
+    <div>
+        <h3>Sorted Rows</h3>
+        <svg width="1000" height="1000" id="visualization"></svg>
+    </div>
+</body>
+</html>
