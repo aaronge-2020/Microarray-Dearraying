@@ -386,7 +386,7 @@ async function loadDataAndVisualize(cores) {
     const gamma = 0.75 * d;
     const phi = 360;
     const imageRotation = 0;
-    const radiusMultiplier = 0.75;
+    const radiusMultiplier = 0.6;
     
     
 
