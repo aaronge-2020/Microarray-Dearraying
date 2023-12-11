@@ -271,22 +271,25 @@ function sortEdgesAndAddIsolatedPoints(bestEdgeSet, normalizedCoordinates) {
 
     return bestEdgeSetIndices;
 }
+
 function visualizeSortedRows(rows, plotDivId) {
     // Prepare the data for Plotly
-    let realPoints = { x: [], y: [], type: 'scatter', mode: 'markers', name: 'Real Points', marker: { color: 'blue' } };
-    let imaginaryPoints = { x: [], y: [], type: 'scatter', mode: 'markers', name: 'Imaginary Points', marker: { color: 'red' } };
-    
+    let realPoints = { x: [], y: [], type: 'scatter', mode: 'markers', name: 'Real Points', marker: { color: 'blue' }, text: [], hoverinfo: 'text', hovertemplate: '%{text}' };
+    let imaginaryPoints = { x: [], y: [], type: 'scatter', mode: 'markers', name: 'Imaginary Points', marker: { color: 'red' }, text: [], hoverinfo: 'text', hovertemplate: '%{text}' };
+
     rows.forEach((row, rowIdx) => {
-        row.forEach(pointInfo => {
+        row.forEach((pointInfo, colIdx) => {
             const [x, y] = pointInfo.point;
-            const isImaginary = pointInfo.isImaginary;
+            const hoverText = `Row: ${rowIdx}, Col: ${colIdx}`;
             
-            if (isImaginary) {
+            if (pointInfo.isImaginary) {
                 imaginaryPoints.x.push(x);
                 imaginaryPoints.y.push(y);
+                imaginaryPoints.text.push(hoverText);
             } else {
                 realPoints.x.push(x);
                 realPoints.y.push(y);
+                realPoints.text.push(hoverText);
             }
         });
     });
@@ -300,7 +303,8 @@ function visualizeSortedRows(rows, plotDivId) {
         yaxis: {
             title: 'Y coordinate',
         },
-        margin: { t: 40 }, // Adjust top margin to accommodate the title
+        hovermode: 'closest', // Display the hover info for the closest point
+        margin: { t: 40 } // Adjust top margin to accommodate the title
     };
 
     // Combine real and imaginary points data
