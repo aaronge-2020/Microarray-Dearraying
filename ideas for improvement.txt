@@ -1,2 +1,0 @@
-1. Change circle search to generate search angle based on the previous points rather than a set angle specified for at the start
-2. Bug where if a row gets interupted in the middle, an imaginary point is used instead of the candidate point in sector search

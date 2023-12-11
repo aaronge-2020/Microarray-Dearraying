@@ -325,13 +325,80 @@ function visualizeSortedRows(rows, svgId) {
     svg.append("g").call(d3.axisBottom(xScale).tickSize(-height).tickFormat(''));
     svg.append("g").call(d3.axisLeft(yScale).tickSize(-width).tickFormat(''));
 }
+function averageEdgeLength(vectors) {
+    const pointsMap = {};
+    vectors.forEach(([start, end]) => {
+        if (!pointsMap[start]) {
+            pointsMap[start] = [];
+        }
+        pointsMap[start].push(end);
 
+        if (!pointsMap[end]) {
+            pointsMap[end] = [];
+        }
+        pointsMap[end].push(start);
+    });
+
+    function buildEdge(start, visited) {
+        const edge = [start];
+        pointsMap[start].forEach(end => {
+            if (!visited.has(end)) {
+                visited.add(end);
+                edge.push(...buildEdge(end, visited));
+            }
+        });
+        return edge;
+    }
+
+    const allEdges = [];
+    const visited = new Set();
+    Object.keys(pointsMap).forEach(start => {
+        if (!visited.has(start)) {
+            visited.add(start);
+            const edge = buildEdge(start, visited);
+            const orderedEdge = Array.from(new Set(edge));
+            if (orderedEdge.length > 1 || orderedEdge[0] === orderedEdge[orderedEdge.length - 1]) {
+                allEdges.push(orderedEdge);
+            }
+        }
+    });
+
+    const finalEdges = [];
+    allEdges.forEach(edge => {
+        if (!finalEdges.some(existingEdge => edge.every(edgePoint => existingEdge.includes(edgePoint)))) {
+            finalEdges.push(edge);
+        }
+    });
+
+    return finalEdges.reduce((acc, edge) => acc + edge.length, 0) / finalEdges.length;
+}
+
+
+
+async function determineImageRotation(normalizedCoordinates, length_filtered_edges, minAngle, maxAngle, angleStepSize, angleThreshold) {
+    // Assuming `readJson` is an async function to read and parse JSON data from a file
+    let bestEdgeSet = null;
+    let bestEdgeSetLength = 0;
+    let optimalAngle = minAngle;
+    
+    for (let i = minAngle; i < maxAngle; i += angleStepSize) {
+        let edgesSet = filterEdgesByAngle(length_filtered_edges, normalizedCoordinates, angleThreshold, i);
+        edgesSet = sortEdgesAndAddIsolatedPoints(edgesSet, normalizedCoordinates);
+        let setLength = averageEdgeLength(edgesSet);
+        if (setLength > bestEdgeSetLength) {
+            bestEdgeSetLength = setLength;
+            bestEdgeSet = edgesSet;
+            optimalAngle = i;
+        }
+    }
+
+    return [bestEdgeSet, bestEdgeSetLength, optimalAngle];
+}
 
 
 // Wrap the data loading and processing in an async function
 async function loadDataAndVisualize(cores) {
     
-
     const delaunay_triangle_edges = getEdgesFromTriangulation(cores);
     const length_filtered_edges = filterEdgesByLength(delaunay_triangle_edges, cores);
     const angle_filtered_edges = filterEdgesByAngle(length_filtered_edges, cores, 10, 0);
@@ -358,7 +425,6 @@ async function loadDataAndVisualize(cores) {
     let coordinatesInput = traveling_algorithm_input.map(([start, end]) => {
         return [[cores[start].x, cores[start].y], [cores[end].x, cores[end].y]];
     });
-    
 
 
     let averageDistances = [];
@@ -389,16 +455,18 @@ async function loadDataAndVisualize(cores) {
     const radiusMultiplier = 0.6;
     
     
+    [bestEdgeSet, bestEdgeSetLength, optimalAngle] = await determineImageRotation(cores, length_filtered_edges, 0, 360, 10, 10) 
+
 
     // Assuming traveling_algorithm is a function you have defined or imported
-    let rows = traveling_algorithm(coordinatesInput, imageWidth, d, gamma, phi, imageRotation, radiusMultiplier);
+    // let rows = traveling_algorithm(coordinatesInput, imageWidth, d, gamma, phi, imageRotation, radiusMultiplier);
 
     // Get the point with the minim
 
     // Assuming sortedRows is a function you have defined or imported
-    let sortedRows = rows.sort((a, b) => b[0]['point'][1] - a[0]['point'][1]);
+    // let sortedRows = rows.sort((a, b) => b[0]['point'][1] - a[0]['point'][1]);
 
-    visualizeSortedRows(sortedRows, "#visualization");
+    // visualizeSortedRows(sortedRows, "#visualization");
 
 }
 
