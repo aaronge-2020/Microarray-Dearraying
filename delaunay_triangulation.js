@@ -1,13 +1,15 @@
+import * as d3 from "https://esm.sh/d3@7.8.5";
+
+import * as math from "https://esm.sh/mathjs@12.2.0";
+
+import * as Plotly from "https://cdn.jsdelivr.net/npm/plotly.js-dist/+esm";
+
+
 function preprocessCores(cores) {
   const minX = Math.min(...cores.map((core) => core.x));
   const maxY = Math.max(...cores.map((core) => core.y));
   return cores.map((core) => ({ x: core.x - minX, y: maxY - core.y }));
 }
-let cores = await fetch("augmented_labels/158871_aug_6.json")
-  .then((response) => response.json())
-  .then((data) => {
-    return preprocessCores(data);
-  });
 
 function getEdgesFromTriangulation(cores) {
   const delaunay = d3.Delaunay.from(cores.map((core) => [core.x, core.y]));
@@ -269,79 +271,63 @@ function sortEdgesAndAddIsolatedPoints(bestEdgeSet, normalizedCoordinates) {
 
     return bestEdgeSetIndices;
 }
-
-function visualizeSortedRows(rows, svgId) {
-    const svg = d3.select(svgId);
-    const width = +svg.attr('width');
-    const height = +svg.attr('height');
-    const realPointColor = 'blue';
-    const imaginaryPointColor = 'red';
-    const offset = 5;
-
-    // Flatten rows and find the extents for scaling
-    const allPoints = rows.flatMap(row => row.map(pointInfo => pointInfo.point));
-    const xExtent = d3.extent(allPoints, d => d[0]);
-    const yExtent = d3.extent(allPoints, d => d[1]);
-
-    // Create scales
-    const xScale = d3.scaleLinear().domain(xExtent).range([10, width - 10]);
-    const yScale = d3.scaleLinear().domain(yExtent).range([height - 10, 10]);
-
-    // Plot each point and add labels
+function visualizeSortedRows(rows, plotDivId) {
+    // Prepare the data for Plotly
+    let realPoints = { x: [], y: [], type: 'scatter', mode: 'markers', name: 'Real Points', marker: { color: 'blue' } };
+    let imaginaryPoints = { x: [], y: [], type: 'scatter', mode: 'markers', name: 'Imaginary Points', marker: { color: 'red' } };
+    
     rows.forEach((row, rowIdx) => {
-        row.forEach((pointInfo, colIdx) => {
+        row.forEach(pointInfo => {
             const [x, y] = pointInfo.point;
             const isImaginary = pointInfo.isImaginary;
-            const color = isImaginary ? imaginaryPointColor : realPointColor;
-
-            svg.append("circle")
-                .attr("cx", xScale(x))
-                .attr("cy", yScale(y))
-                .attr("r", 5)
-                .attr("fill", color);
-
-            // Adjust text alignment to reduce overlap
-            const ha = colIdx % 2 === 0 ? -offset : offset;
-            const va = rowIdx % 2 === 0 ? -offset : offset;
-
-            svg.append("text")
-                .attr("x", xScale(x) + ha)
-                .attr("y", yScale(y) + va)
-                .text(`R${rowIdx}C${colIdx}`)
-                .attr("font-size", "8px")
-                .attr("text-anchor", colIdx % 2 === 0 ? "end" : "start")
-                .attr("alignment-baseline", rowIdx % 2 === 0 ? "bottom" : "hanging")
-                .attr("fill", color);
+            
+            if (isImaginary) {
+                imaginaryPoints.x.push(x);
+                imaginaryPoints.y.push(y);
+            } else {
+                realPoints.x.push(x);
+                realPoints.y.push(y);
+            }
         });
     });
 
-    // Add axes (optional, uncomment if needed)
-    const xAxis = d3.axisBottom(xScale);
-    const yAxis = d3.axisLeft(yScale);
-    svg.append("g").call(xAxis).attr("transform", `translate(0,${height - 10})`);
-    svg.append("g").call(yAxis).attr("transform", "translate(10,0)");
+    // Define layout for the plot
+    const layout = {
+        title: 'Sorted Rows Visualization',
+        xaxis: {
+            title: 'X coordinate',
+        },
+        yaxis: {
+            title: 'Y coordinate',
+        },
+        margin: { t: 40 }, // Adjust top margin to accommodate the title
+    };
 
-    // Add grid (optional, uncomment if needed)
-    svg.append("g").call(d3.axisBottom(xScale).tickSize(-height).tickFormat(''));
-    svg.append("g").call(d3.axisLeft(yScale).tickSize(-width).tickFormat(''));
+    // Combine real and imaginary points data
+    const data = [realPoints, imaginaryPoints];
+
+    // Create the plot using Plotly
+    Plotly.default.newPlot(plotDivId, data, layout);
 }
-function averageEdgeLength(vectors) {
-    const pointsMap = {};
-    vectors.forEach(([start, end]) => {
-        if (!pointsMap[start]) {
-            pointsMap[start] = [];
-        }
-        pointsMap[start].push(end);
 
-        if (!pointsMap[end]) {
-            pointsMap[end] = [];
-        }
-        pointsMap[end].push(start);
+
+function averageEdgeLength(vectors) {
+    // Create a map to store the connections
+    const pointsMap = new Map();
+
+    // Populate the map with vector connections
+    vectors.forEach(([start, end]) => {
+        if (!pointsMap.has(start)) pointsMap.set(start, new Set());
+        if (!pointsMap.has(end)) pointsMap.set(end, new Set());
+
+        pointsMap.get(start).add(end);
+        pointsMap.get(end).add(start);
     });
 
+    // Recursive function to build edges
     function buildEdge(start, visited) {
         const edge = [start];
-        pointsMap[start].forEach(end => {
+        pointsMap.get(start).forEach(end => {
             if (!visited.has(end)) {
                 visited.add(end);
                 edge.push(...buildEdge(end, visited));
@@ -350,12 +336,14 @@ function averageEdgeLength(vectors) {
         return edge;
     }
 
+    // Find all unique edges
     const allEdges = [];
     const visited = new Set();
-    Object.keys(pointsMap).forEach(start => {
+    pointsMap.forEach((_, start) => {
         if (!visited.has(start)) {
             visited.add(start);
             const edge = buildEdge(start, visited);
+            // Filter duplicates and maintain order
             const orderedEdge = Array.from(new Set(edge));
             if (orderedEdge.length > 1 || orderedEdge[0] === orderedEdge[orderedEdge.length - 1]) {
                 allEdges.push(orderedEdge);
@@ -363,14 +351,17 @@ function averageEdgeLength(vectors) {
         }
     });
 
-    const finalEdges = [];
-    allEdges.forEach(edge => {
-        if (!finalEdges.some(existingEdge => edge.every(edgePoint => existingEdge.includes(edgePoint)))) {
-            finalEdges.push(edge);
-        }
+    // Filter to keep only the longest edges
+    const finalEdges = allEdges.filter(edge => {
+        return !allEdges.some(existingEdge => {
+            const isSubset = edge.every(val => existingEdge.includes(val));
+            return isSubset && existingEdge.length > edge.length;
+        });
     });
 
-    return finalEdges.reduce((acc, edge) => acc + edge.length, 0) / finalEdges.length;
+    // Calculate the average edge length
+    const averageLength = finalEdges.reduce((acc, edge) => acc + edge.length, 0) / finalEdges.length;
+    return isNaN(averageLength) ? 0 : averageLength;
 }
 
 
@@ -383,6 +374,7 @@ async function determineImageRotation(normalizedCoordinates, length_filtered_edg
     
     for (let i = minAngle; i < maxAngle; i += angleStepSize) {
         let edgesSet = filterEdgesByAngle(length_filtered_edges, normalizedCoordinates, angleThreshold, i);
+        edgesSet = limitConnections(edgesSet, normalizedCoordinates);
         edgesSet = sortEdgesAndAddIsolatedPoints(edgesSet, normalizedCoordinates);
         let setLength = averageEdgeLength(edgesSet);
         if (setLength > bestEdgeSetLength) {
@@ -394,38 +386,12 @@ async function determineImageRotation(normalizedCoordinates, length_filtered_edg
 
     return [bestEdgeSet, bestEdgeSetLength, optimalAngle];
 }
+function calculateGridWidth(centers, d, multiplier) {
+    let maxX = Math.max(...centers.map(center => center.x));
+    return maxX + multiplier * d;
+}
 
-
-// Wrap the data loading and processing in an async function
-async function loadDataAndVisualize(cores) {
-    
-    const delaunay_triangle_edges = getEdgesFromTriangulation(cores);
-    const length_filtered_edges = filterEdgesByLength(delaunay_triangle_edges, cores);
-    const angle_filtered_edges = filterEdgesByAngle(length_filtered_edges, cores, 10, 0);
-    const limited_edges = limitConnections(angle_filtered_edges, cores);
-
-    // Visualize original cores
-    visualizeCores(cores, "#svg-cores");
-
-    // Visualize edges after Delaunay triangulation
-    visualizeEdges(delaunay_triangle_edges, cores, "#svg-delaunay", "red");
-
-    // Visualize edges after length filtering
-    visualizeEdges(length_filtered_edges, cores, "#svg-length-filtered", "green");
-
-    // Visualize edges after angle filtering
-    visualizeEdges(angle_filtered_edges, cores, "#svg-angle-filtered", "blue");
-
-    // Visualize edges after limiting connections
-    visualizeEdges(limited_edges, cores, "#svg-limited-connections", "purple");
-
-    const traveling_algorithm_input = sortEdgesAndAddIsolatedPoints(limited_edges, cores);
-
-    
-    let coordinatesInput = traveling_algorithm_input.map(([start, end]) => {
-        return [[cores[start].x, cores[start].y], [cores[end].x, cores[end].y]];
-    });
-
+function calculateAverageDistance(coordinatesInput) {
 
     let averageDistances = [];
     for (let edge of coordinatesInput) {
@@ -434,59 +400,26 @@ async function loadDataAndVisualize(cores) {
         averageDistances.push(distance);
     }
 
-    let averageDistance = math.median(averageDistances); // Assuming median is a function you have defined or imported
+    return math.median(averageDistances); // Assuming median is a function you have defined or imported
 
-    function calculateGridWidth(centers, d, multiplier) {
-        let maxX = Math.max(...centers.map(center => center.x));
-        return maxX + multiplier * d;
-    }
-
-    // Calculate the average core-to-core distance
-    let d = averageDistance;
-
-    // Calculate Y (here, imageWidth)
-    let imageWidth = calculateGridWidth(cores, d, 1.5);
-
-
-    // Run traveling algorithm
-    const gamma = 0.75 * d;
-    const phi = 360;
-    const imageRotation = 0;
-    const radiusMultiplier = 0.6;
-    
-    
-    [bestEdgeSet, bestEdgeSetLength, optimalAngle] = await determineImageRotation(cores, length_filtered_edges, 0, 360, 10, 10) 
-
-
-    // Assuming traveling_algorithm is a function you have defined or imported
-    // let rows = traveling_algorithm(coordinatesInput, imageWidth, d, gamma, phi, imageRotation, radiusMultiplier);
-
-    // Get the point with the minim
-
-    // Assuming sortedRows is a function you have defined or imported
-    // let sortedRows = rows.sort((a, b) => b[0]['point'][1] - a[0]['point'][1]);
-
-    // visualizeSortedRows(sortedRows, "#visualization");
 
 }
 
-// Step 1: Add event listener to file input
-document.getElementById('fileInput').addEventListener('change', handleFileSelect, false);
 
-function handleFileSelect(event) {
-    const reader = new FileReader();
-    reader.onload = handleFileLoad;
-    reader.readAsText(event.target.files[0]);
+export{
+    preprocessCores,
+    getEdgesFromTriangulation,
+    filterEdgesByAngle,
+    filterEdgesByLength,
+    limitConnections,
+    visualizeCores,
+    visualizeEdges,
+    visualizeSortedRows,
+    calculateGridWidth,
+    calculateAverageDistance,
+    determineImageRotation,
+    traveling_algorithm,
+
 }
-
-function handleFileLoad(event) {
-    try {
-        const cores = preprocessCores(JSON.parse(event.target.result));
-        loadDataAndVisualize(cores);
-    } catch (error) {
-        console.error('Error processing file:', error);
-    }
-}
-
 // Call the function to load data and visualize
 // loadDataAndVisualize().catch(error => console.error('An error occurred:', error));

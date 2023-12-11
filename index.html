@@ -1,41 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Delaunay Triangulation Visualization</title>
-    <script src="https://cdn.jsdelivr.net/npm/mathjs@12.2.0/lib/browser/math.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6.0.4/dist/d3-delaunay.min.js"></script>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script type="module" src="./delaunay_triangulation.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De-arraying Visualization</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+    <div class="app-container">
+        <div class="sidebar">
+            <!-- Form for hyperparameters -->
+            <form id="hyperparameters-form">
+                <!-- File input section -->
+                <div class="file-upload-container">
+                    <label for="fileInput" class="file-dropzone">
+                        <div class="file-input-btn">Select a file</div>
+                        <input type="file" id="fileInput" name="fileInput" hidden>
+                        <p>Drop file here</p>
+                    </label>
+                </div>
 
-    <input type="file" id="fileInput" name="JSON File"/>
+                <!-- Hyperparameter form section -->
+                <div class="hyperparameters">
+                    <h2>Hyperparameter Configuration</h2>
+
+                    <!-- Edge Detection Section -->
+                    <fieldset>
+                        <legend>Edge Detection Parameters</legend>
+
+                        <!-- originAngle input -->
+                        <label for="originAngle" title="Rotation of the image in degrees">Origin Angle</label>
+                        <input type="number" id="originAngle" name="originAngle" step="1" value="0">
+
+                        <label for="thresholdMultiplier"
+                            title="Multiplier for the median absolute deviation to filter edges by length">Threshold
+                            Multiplier</label>
+                        <input type="number" id="thresholdMultiplier" name="thresholdMultiplier" step="0.1" value="1.5">
+
+                        <label for="thresholdAngle" title="The angle within which edges are considered valid">Threshold
+                            Angle</label>
+                        <input type="number" id="thresholdAngle" name="thresholdAngle" step="1" value="10">
+                    </fieldset>
+
+                    <!-- Image Rotation Section -->
+                    <fieldset>
+                        <legend>Image Rotation Parameters</legend>
+
+                        <label for="minAngle" title="Minimum angle to test for image rotation">Minimum Angle</label>
+                        <input type="number" id="minAngle" name="minAngle" step="1" value="0">
+
+                        <label for="maxAngle" title="Maximum angle to test for image rotation">Maximum Angle</label>
+                        <input type="number" id="maxAngle" name="maxAngle" step="1" value="360">
+
+                        <label for="angleStepSize"
+                            title="Incremental step size for testing angles during image rotation">Angle Step
+                            Size</label>
+                        <input type="number" id="angleStepSize" name="angleStepSize" step="1" value="5">
+
+                        <label for="angleThreshold"
+                            title="Angle threshold used when filtering edges by angle for image rotation">Angle
+                            Threshold</label>
+                        <input type="number" id="angleThreshold" name="angleThreshold" step="1" value="10">
+                    </fieldset>
+
+                    <!-- Traveling Algorithm Section -->
+                    <fieldset>
+                        <legend>Traveling Algorithm Parameters</legend>
+
+                        <label for="radiusMultiplier"
+                            title="Multiplier for the radius used in the traveling algorithm">Radius Multiplier</label>
+                        <input type="number" id="radiusMultiplier" name="radiusMultiplier" step="0.1" value="0.5">
+
+                        <label for="gridWidth"
+                            title="Width of one square in the grid used in the traveling algorithm">Grid Width</label>
+                        <input type="number" id="gridWidth" name="gridWidth" step="1" value="70">
+
+                        <label for="gamma"
+                        title="Distance after the the core with the greatest X value to stop the traveling algorithm">Stopping Distance</label>
+                        <input type="number" id="gamma" name="gamma" step="1" value="60">
 
 
+                        <label for="multiplier"
+                            title="Multiplier for the grid width calculation in the traveling algorithm">Multiplier for
+                            Grid Width</label>
+                        <input type="number" id="multiplier" name="multiplier" step="0.1" value="1.5">
 
-    <div>
-        <h3>Original Cores</h3>
-        <svg width="800" height="800" id="svg-cores"></svg>
+                        <label for="imageWidth"
+                            title="Width of the entire gird used in the traveling algorithm">Image Width</label>
+                        <input type="number" id="imageWidth" name="imageWidth" step="1" value="1024">
+
+                        <label for="searchAngle"
+                            title="Angle to search in the traveling algorithm">Search Angle</label>
+                        <input type="number" id="searchAngle" name="searchAngle" step="1" value="360">
+
+                    </fieldset>
+
+                    <button type="button" id="apply-hyperparameters">Apply Hyperparameters</button>
+                </div>
+            </form>
+
+        </div>
+        <div class="content">
+            <!-- Carousel for visualizations -->
+            <div id="visualization-carousel" class="carousel">
+                <!-- Add SVG container for D3 visualizations -->
+                <div id="visualization" style="width: 800px; height: 800px;"></div>
+
+                <!-- Other carousel slides can go here -->
+            </div>
+        </div>
+
     </div>
-    <div>
-        <h3>Delaunay Triangulation</h3>
-        <svg width="800" height="800" id="svg-delaunay"></svg>
-    </div>
-    <div>
-        <h3>Length Filtered Edges</h3>
-        <svg width="800" height="800" id="svg-length-filtered"></svg>
-    </div>
-    <div>
-        <h3>Angle Filtered Edges</h3>
-        <svg width="800" height="800" id="svg-angle-filtered"></svg>
-    </div>
-    <div>
-        <h3>Limited Connections</h3>
-        <svg width="800" height="800" id="svg-limited-connections"></svg>
-    </div>
-    <div>
-        <h3>Sorted Rows</h3>
-        <svg width="1000" height="1000" id="visualization"></svg>
-    </div>
+
+    <script type="module" src="main.js"></script>
 </body>
+
 </html>
