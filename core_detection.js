@@ -65,8 +65,9 @@ function calculateCentroids(markers, minArea, maxArea) {
       let area = region.count;
       if (area >= minArea && area <= maxArea) {
           centroids[label] = {
-              center: [region.xSum / area, region.ySum / area], // centroid (row, col)
-              area: area
+              x: region.xSum / area,
+              y: region.ySum / area, 
+              radius: Math.sqrt(area / Math.PI), // radius
           };
       }
   }
@@ -292,6 +293,7 @@ async function runPipeline(
     disTransformMultiplier
   );
 
+  window.properties = properties;
   // Visualize the predictions with the centers
   await visualizePredictions(
     imageElement,
@@ -318,9 +320,8 @@ function visualizeCenters(properties, imageElement) {
 
   // Draw a red dot at each center
   Object.values(properties).forEach((prop) => {
-    const [x, y] = prop.center;
     ctx.beginPath();
-    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+    ctx.arc(prop.x, prop.y, 5, 0, 2 * Math.PI);
     ctx.fillStyle = "red";
     ctx.fill();
   });

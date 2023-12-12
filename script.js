@@ -77,3 +77,20 @@ label.ondrop = function (evt) {
   fileInput.files = evt.dataTransfer.files;
   fileInput.dispatchEvent(new Event("change"));
 };
+
+document.getElementById('downloadBtn').addEventListener('click', function() {
+    // Assuming `properties` is the variable holding your segmentation results
+    if (!window.properties) {
+        alert('Algorithm has not run yet!');
+        return;
+    }
+
+    const propertiesJson = JSON.stringify(window.properties, null, 2);
+    const blob = new Blob([propertiesJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'segmentation-properties.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
