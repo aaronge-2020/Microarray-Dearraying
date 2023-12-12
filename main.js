@@ -96,11 +96,7 @@ document.getElementById("loadJsonBtn").addEventListener("click", async () => {
   }
   window.cores = preprocessCores(jsonData);
 
-  if (jsonData) {
-    // Assuming you have a function to setup UI values or something similar
-    loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
-    runTravelingAlgorithm(window.cores, getHyperparametersFromUI());
-  }
+  applyAndVisualize();
 });
 
 function handleFileLoad(event) {
