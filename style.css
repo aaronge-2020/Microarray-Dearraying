@@ -1,9 +1,11 @@
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    font-family: Arial, sans-serif;
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
 }
+
 header {
   background: #f8f9fa;
   padding: 10px 20px;
@@ -17,7 +19,6 @@ header .logo h1 {
   margin: 0;
   font-size: 24px;
 }
-
 
 nav ul {
   list-style: none;
@@ -33,82 +34,162 @@ nav ul li {
 nav ul li a {
   text-decoration: none;
   color: #007bff;
-  transition: color 0.3s; /* Smooth transition for hover effects */
+  transition: color 0.3s;
+  /* Smooth transition for hover effects */
 }
 
 nav ul li a:hover {
-  color: #0056b3; /* Darken link color on hover for interaction feedback */
+  color: #0056b3;
+  /* Darken link color on hover for interaction feedback */
 }
 
-
 .app-container {
-    display: flex;
-    height: 100%;
+  display: flex;
+  height: 100%;
 }
 
 .sidebar {
-    width: 40%;
-    background-color: #f4f4f4;
-    padding: 20px;
-    overflow-y: auto;
+  width: 250px;
+  /* Adjusted width */
+  background-color: #f4f4f4;
+  padding: 20px;
+  overflow-y: auto;
+  border-right: 1px solid #ddd;
+  /* Add a border to separate sidebar from content */
 }
 
 .content {
-    width: 75%;
-    padding: 20px;
-    overflow-y: auto;
+  flex-grow: 1;
+  /* Make content area flexible */
+  padding: 20px;
+  overflow-y: auto;
 }
 
-.carousel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-/* Add to your existing CSS */
+.file-upload-container,
 .hyperparameters {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin-bottom: 20px;
-  }
-  
-  .hyperparameters h2 {
-    margin-top: 0;
-    color: #333;
-  }
-  
-  .hyperparameters label {
-    display: block;
-    font-weight: bold;
-    margin: 10px 0 5px;
-  }
-  
-  .hyperparameters input[type=number] {
-    width: calc(100% - 20px);
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-  }
-  
-  button {
-    background-color: #ff9900;
-    border: none;
-    border-radius: 4px;
-    color: white;
-    padding: 10px 20px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  button:hover {
-    background-color: #cc7a00;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.hyperparameters h2,
+.file-upload-container h2 {
+  margin-top: 0;
+  color: #333;
+}
+
+.hyperparameters label,
+.file-upload-container label {
+  display: block;
+  font-weight: bold;
+  margin: 10px 0 5px;
+}
+
+.hyperparameters input[type=number],
+.hyperparameters input[type=text],
+.file-upload-container input[type=file] {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+button {
+  background-color: #007bff;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  padding: 10px 20px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* New Styles for JSON URL Input */
+#jsonUrlInput {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+/* Adjusting styling for file input label */
+.file-input-label {
+  display: block;
+  border: 2px dashed #ccc;
+  border-radius: 5px;
+  text-align: center;
+  padding: 20px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.file-input-label:hover {
+  border-color: #007bff;
+}
+
+/* Style adjustments for range slider */
+#thresholdSlider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 15px;
+  border-radius: 5px;
+  background: #ddd;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+#thresholdSlider:hover {
+  opacity: 1;
+}
+
+#thresholdSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #007bff;
+  cursor: pointer;
+}
+
+#thresholdSlider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #007bff;
+  cursor: pointer;
+}
+
+/* Ensuring sidebar contents do not overflow */
+.sidebar {
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+/* Additional responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    max-height: none;
   }
 
-  
+  .content {
+    flex-grow: 0;
+    width: 100%;
+  }
+}
+
 /* Drag and drop file input styles */
 .file-upload-container {
   border: 2px dashed #ccc;
@@ -134,15 +215,3 @@ nav ul li a:hover {
 .file-dropzone p {
   margin: 0;
 }
-
-/* Adjusting width of hyperparameters container */
-.sidebar {
-  resize: horizontal; /* This allows the container to be resized horizontally */
-  overflow: auto; /* To ensure content does not overlap when resized */
-  border: 1px solid #ddd; /* Adding a border to indicate the area that can be resized */
-  padding: 10px; /* Spacing inside the container */
-  margin-bottom: 20px; /* Spacing below the container */
-}
-
-
-/* Add additional CSS for the form and carousel as needed */

@@ -63,6 +63,38 @@ fileInput.addEventListener("change", async function (e) {
   }
 });
 
+
+// Event listener for the 'Load Image from URL' button
+document
+  .getElementById("loadImageUrlBtn")
+  .addEventListener("click", function () {
+    const imageUrl = document.getElementById("imageUrlInput").value;
+
+    if (imageUrl) {
+      // Create a new Image object
+      const image = new Image();
+
+      // Once the image is loaded, run the full pipeline
+      image.onload = async function () {
+        // Set the originalImageContainer's source to the loaded image's source
+        originalImageContainer.src = this.src;
+
+        // Run the pipeline with the new image
+        updateVisualization();
+      };
+
+      // Handle any errors that occur during loading
+      image.onerror = function () {
+        console.error("Failed to load image from URL.");
+      };
+
+      // Set the source of the image to the provided URL
+      image.src = imageUrl;
+    } else {
+      console.error("Please enter a valid image URL");
+    }
+  });
+
 // Append the canvas to your image container
 document.querySelector(".image-container").appendChild(processedImageCanvas);
 
@@ -78,19 +110,54 @@ label.ondrop = function (evt) {
   fileInput.dispatchEvent(new Event("change"));
 };
 
-document.getElementById('downloadBtn').addEventListener('click', function() {
-    // Assuming `properties` is the variable holding your segmentation results
-    if (!window.properties) {
-        alert('Algorithm has not run yet!');
-        return;
-    }
+document.getElementById("downloadBtn").addEventListener("click", function () {
+  // Assuming `properties` is the variable holding your segmentation results
+  if (!window.properties) {
+    alert("Algorithm has not run yet!");
+    return;
+  }
 
-    const propertiesJson = JSON.stringify(window.properties, null, 2);
-    const blob = new Blob([propertiesJson], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'segmentation-properties.json';
-    a.click();
-    URL.revokeObjectURL(url);
+  const propertiesJson = JSON.stringify(window.properties, null, 2);
+  const blob = new Blob([propertiesJson], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "segmentation-properties.json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+
+window.addEventListener('load', function() {
+    // This will be executed after the page is fully loaded
+    const urlParams = new URLSearchParams(window.location.search);
+    const imageUrl = urlParams.get('image');
+    if (imageUrl) {
+      loadImageAndRunPipeline(imageUrl);
+    }
   });
+  
+  function loadImageAndRunPipeline(imageUrl) {
+    // Create a new Image object
+    const image = new Image();
+    // Set CORS to anonymous to access the image data if CORS headers are set on the image server
+    image.crossOrigin = "anonymous";
+    
+    // Once the image is loaded, run the full pipeline
+    image.onload = async function() {
+      // Assuming originalImageContainer is defined earlier in your code and accessible here
+      originalImageContainer.src = this.src;
+      updateVisualization(); // Make sure this function is defined and does what's expected
+    };
+  
+    // Handle any errors that occur during loading
+    image.onerror = function() {
+      console.error('Failed to load image from URL.');
+      if (document.getElementById('notification')) {
+        document.getElementById('notification').textContent = 'Failed to load image from URL. Please check the URL and try again.';
+      }
+    };
+  
+    // Set the source of the image to the provided URL
+    image.src = imageUrl;
+  }
