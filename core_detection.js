@@ -1,7 +1,30 @@
 // Load the model from the web server where the model.json and group1-shard1of1.bin files are located
 
 import * as tf from "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.14.0/+esm";
-// import * as cv from "https://cdn.jsdelivr.net/npm/opencv.js@1.2.1/+esm";
+
+function loadOpenCV() {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/opencv.js@1.2.1/opencv.min.js";
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      if (cv.getBuildInformation) {
+        console.log("OpenCV.js is ready.");
+        resolve("OpenCV Loaded");
+      } else {
+        reject("OpenCV.js is loaded but not ready to use.");
+      }
+    };
+
+    script.onerror = () => {
+      reject("Failed to load OpenCV.js");
+    };
+
+    document.body.appendChild(script);
+  });
+}
 
 async function loadModel(modelUrl) {
   try {
@@ -15,105 +38,123 @@ async function loadModel(modelUrl) {
   }
 }
 
-// Make sure to load OpenCV.js in your HTML before this script runs
-function watershedAlgorithm(
-  src,
-  min_area,
-  max_area,
-  dis_transform_multiplier = 0.6
-) {
-  let gray = new cv.Mat();
-  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
 
-  let opening = new cv.Mat();
-  let kernel = cv.Mat.ones(3, 3, cv.CV_8U);
-  let sure_bg = new cv.Mat();
-  let dist_transform = new cv.Mat();
-  let sure_fg = new cv.Mat();
-  let unknown = new cv.Mat();
-  let markers = new cv.Mat();
 
+function calculateCentroids(markers, minArea, maxArea) {
+  let regions = {};
+  
+  // Iterate through each pixel in the markers matrix
+  for (let i = 0; i < markers.rows; i++) {
+      for (let j = 0; j < markers.cols; j++) {
+          let label = markers.intPtr(i, j)[0];
+          if (label === 0) continue; // Skip the background
+
+          if (!(label in regions)) {
+              regions[label] = { xSum: 0, ySum: 0, count: 0 };
+          }
+
+          regions[label].xSum += j;
+          regions[label].ySum += i;
+          regions[label].count += 1;
+      }
+  }
+
+  let centroids = {};
+  for (let label in regions) {
+      let region = regions[label];
+      let area = region.count;
+      if (area >= minArea && area <= maxArea) {
+          centroids[label] = {
+              center: [region.xSum / area, region.ySum / area], // centroid (row, col)
+              area: area
+          };
+      }
+  }
+
+  return centroids;
+}
+
+function getMaxValue(mat) {
+  let maxVal = 0;
+  for (let i = 0; i < mat.rows; i++) {
+    for (let j = 0; j < mat.cols; j++) {
+      let val = mat.floatPtr(i, j)[0];
+      if (val > maxVal) {
+        maxVal = val;
+      }
+    }
+  }
+  return maxVal;
+}
+
+
+function segmentationAlgorithm(data, minArea, maxArea, disTransformMultiplier = 0.6) {
+
+      // Convert to grayscale if the image is not already
+      let gray = new cv.Mat();
+      if (data.channels() === 3 || data.channels() === 4) {
+          cv.cvtColor(data, gray, cv.COLOR_RGBA2GRAY, 0);
+      } else {
+          gray = src.clone();
+      }
+  
+      // Convert to binary image
+      let binary = new cv.Mat();
+      cv.threshold(gray, binary, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU);
+
+      
   // Noise removal with opening
-  cv.morphologyEx(gray, opening, cv.MORPH_OPEN, kernel);
+  let kernel = cv.Mat.ones(3, 3, cv.CV_8U);
+  let opening = new cv.Mat();
+  cv.morphologyEx(binary, opening, cv.MORPH_OPEN, kernel, new cv.Point(-1, -1), 2);
 
-  // Sure background area (dilation enlarges the regions)
-  cv.dilate(opening, sure_bg, kernel, new cv.Point(-1, -1), 3);
+  // Sure background area
+  let sureBg = new cv.Mat();
+  cv.dilate(opening, sureBg, kernel, new cv.Point(-1, -1), 3);
 
   // Finding sure foreground area
-  cv.distanceTransform(opening, dist_transform, cv.DIST_L2, 5);
-  cv.threshold(
-    dist_transform,
-    sure_fg,
-    dis_transform_multiplier * Math.max(...dist_transform.data),
-    255,
-    cv.THRESH_BINARY
-  );
+  let distTransform = new cv.Mat();
+  cv.distanceTransform(opening, distTransform, cv.DIST_L2, 5);
+  let sureFg = new cv.Mat();
+  // Then use it in your threshold call
+  let maxVal = getMaxValue(distTransform);
+  cv.threshold(distTransform, sureFg, disTransformMultiplier * maxVal, 255, 0);
 
   // Finding unknown region
-  cv.subtract(sure_bg, sure_fg, unknown);
+  sureFg.convertTo(sureFg, cv.CV_8U);
+  let unknown = new cv.Mat();
+  cv.subtract(sureBg, sureFg, unknown);
 
   // Marker labelling
-  cv.connectedComponents(sure_fg, markers);
+  let markers = new cv.Mat();
+  cv.connectedComponents(sureFg, markers);
 
   // Add one to all labels so that sure background is not 0, but 1
-  markers.convertTo(markers, cv.CV_32S); // Convert markers to 32S type for watershed
+  let markersAdjusted = new cv.Mat();
+  cv.add(markers, new cv.Mat(markers.rows, markers.cols, markers.type(), new cv.Scalar(1)), markersAdjusted);
 
   // Now, mark the region of unknown with zero
-  unknown.convertTo(unknown, cv.CV_8U);
-  for (let i = 0; i < markers.rows; i++) {
-    for (let j = 0; j < markers.cols; j++) {
-      if (unknown.ucharPtr(i, j)[0] === 255) {
-        markers.intPtr(i, j)[0] = 0;
+  for (let i = 0; i < markersAdjusted.rows; i++) {
+      for (let j = 0; j < markersAdjusted.cols; j++) {
+          if (unknown.ucharAt(i, j) === 255) {
+              markersAdjusted.ucharPtr(i, j)[0] = 0;
+          }
       }
-    }
   }
 
-  // Watershed algorithm
-  cv.watershed(src, markers);
+  // Calculate properties for each region
+  let properties = calculateCentroids(markersAdjusted, minArea, maxArea);
 
-  // Calculate properties for each region.
-  let properties = {};
-  for (let i = 0; i < markers.rows; i++) {
-    for (let j = 0; j < markers.cols; j++) {
-      let regionLabel = markers.intPtr(i, j)[0];
-      // Skip background and border regions
-      if (regionLabel === -1 || regionLabel === 1) {
-        continue;
-      }
-
-      if (!(regionLabel in properties)) {
-        properties[regionLabel] = { area: 0, points: [] };
-      }
-
-      properties[regionLabel].area++;
-      properties[regionLabel].points.push({ x: j, y: i });
-    }
-  }
-
-  // Filtering regions based on area
-  let filteredProperties = {};
-  Object.keys(properties).forEach((label) => {
-    let region = properties[label];
-    if (region.area >= min_area && region.area <= max_area) {
-      let centroidX =
-        region.points.reduce((sum, p) => sum + p.x, 0) / region.area;
-      let centroidY =
-        region.points.reduce((sum, p) => sum + p.y, 0) / region.area;
-      filteredProperties[label] = {
-        center: [centroidX, centroidY],
-        area: region.area,
-      };
-    }
-  });
-
-  gray.delete();
+  // Cleanup
   opening.delete();
-  sure_bg.delete();
-  dist_transform.delete();
-  sure_fg.delete();
+  sureBg.delete();
+  distTransform.delete();
+  sureFg.delete();
   unknown.delete();
   markers.delete();
-  return filteredProperties;
+  markersAdjusted.delete();
+
+  return properties;
 }
 
 // Preprocess and predict function
@@ -155,20 +196,19 @@ async function visualizePredictions(originalImage, predictions, container) {
   // Draw the original image onto the canvas
   ctx.drawImage(originalImage, 0, 0, width, height);
 
-  // Convert predictions to image data
-  const maskImageData = await tf.tidy(() => {
-    // Clip the predictions to ensure they are between 0 and 1
-    const clippedPredictions = predictions.clipByValue(0, 1);
-    // Resize the predictions to match the original image size
-    const resizedPredictions = tf.image.resizeBilinear(clippedPredictions, [
-      height,
-      width,
-    ]);
-    // Convert the tensor to data for visualization
-    return tf.browser.toPixels(resizedPredictions.squeeze());
-  });
+  // Process predictions outside of tf.tidy
+  const clippedPredictions = predictions.clipByValue(0, 1);
+  const resizedPredictions = await tf.image.resizeBilinear(clippedPredictions, [
+    height,
+    width,
+  ]);
+  const squeezedPredictions = resizedPredictions.squeeze();
+  const maskImageData = await tf.browser.toPixels(squeezedPredictions);
 
-  // Put the mask data into an ImageData object
+  // Dispose of the tensor since toPixels is done
+  tf.dispose([clippedPredictions, resizedPredictions, squeezedPredictions]);
+
+  // Create ImageData object with the mask data
   const imageData = new ImageData(maskImageData, width, height);
 
   // Draw the mask on top of the original image
@@ -177,9 +217,10 @@ async function visualizePredictions(originalImage, predictions, container) {
   // Set the source of the container to the canvas data
   container.src = canvas.toDataURL();
 
-  // Dispose predictions to free memory
+  // Ensure predictions are disposed
   predictions.dispose();
 }
+
 // Function to apply the threshold to the predictions
 function applyThreshold(predictions, threshold) {
   return predictions.greaterEqual(tf.scalar(threshold)).toFloat();
@@ -202,12 +243,102 @@ async function processAndVisualizeImage(
     thresholdedPredictions,
     visualizationContainer
   );
+  return thresholdedPredictions;
+}
+
+function tensorToCvMat(tensor) {
+  // Squeeze the tensor to remove dimensions of size 1
+  const squeezed = tensor.squeeze();
+  const [height, width] = squeezed.shape;
+  const data = squeezed.dataSync(); // Get tensor data
+  const out = new cv.Mat(height, width, cv.CV_8UC1); // Create a new OpenCV Mat for grayscale image
+
+  // Fill the OpenCV Mat with the tensor data
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      out.ucharPtr(y, x)[0] = data[y * width + x] * 255;
+    }
+  }
+
+  // Clean up tensor
+  squeezed.dispose();
+  let srcMatRgb = new cv.Mat();
+  cv.cvtColor(out, srcMatRgb, cv.COLOR_GRAY2RGB);
+  return srcMatRgb;
+}
+
+// Main function to run the full prediction and visualization pipeline
+async function runPipeline(
+  imageElement,
+  model,
+  threshold,
+  minArea,
+  maxArea,
+  disTransformMultiplier,
+  visualizationContainer
+) {
+  // Preprocess the image and predict
+  const predictions = await preprocessAndPredict(imageElement, model);
+  // Apply the threshold to the predictions
+  const thresholdedPredictions = applyThreshold(predictions, threshold);
+  // Convert the tensor to a format that OpenCV.js can work with
+  const srcMat = tensorToCvMat(thresholdedPredictions);
+
+  // Run the segmentation algorithm to find centers
+  const properties = segmentationAlgorithm(
+    srcMat,
+    minArea,
+    maxArea,
+    disTransformMultiplier
+  );
+
+  // Visualize the predictions with the centers
+  await visualizePredictions(
+    imageElement,
+    thresholdedPredictions,
+    visualizationContainer
+  );
+
+  // Then visualize the centers on top of the predictions
+  visualizeCenters(properties, visualizationContainer);
+}
+
+// Function to visualize centers
+function visualizeCenters(properties, imageElement) {
+  // Create a temporary canvas
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  // Set canvas dimensions to match the image
+  canvas.width = imageElement.width;
+  canvas.height = imageElement.height;
+
+  // Draw the image onto the canvas
+  ctx.drawImage(imageElement, 0, 0, imageElement.width, imageElement.height);
+
+  // Draw a red dot at each center
+  Object.values(properties).forEach((prop) => {
+    const [x, y] = prop.center;
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = "red";
+    ctx.fill();
+  });
+
+  // Update the original image element if needed
+  imageElement.src = canvas.toDataURL();
+
+  // If you don't need to update the original img element, you could append the canvas to the DOM
+  // document.body.appendChild(canvas); // Or append it to another element
 }
 
 export {
   loadModel,
-  watershedAlgorithm,
+  segmentationAlgorithm,
   preprocessAndPredict,
   processAndVisualizeImage,
   visualizePredictions,
+  runPipeline,
+  visualizeCenters,
+  loadOpenCV,
 };

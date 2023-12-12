@@ -37,9 +37,16 @@
         <label for="thresholdSlider">Threshold: <span id="thresholdValue">0.5</span></label>
         <input type="range" id="thresholdSlider" min="0" max="1" step="0.0025" value="0.5">
 
-        <button id="reset">Reset</button>
-        <button id="multiMask">Multi-mask</button>
-        <button id="cutOutObject">Cut out object</button>
+        <label for="minAreaInput">Min Area:</label>
+        <input type="number" id="minAreaInput" value="10" step="1" min="1" />
+    
+        <label for="maxAreaInput">Max Area:</label>
+        <input type="number" id="maxAreaInput" value="500" step="1" min="1" />
+    
+        <label for="disTransformMultiplierInput">Distance Transform Multiplier:</label>
+        <input type="number" id="disTransformMultiplierInput" value="0.6" step="0.1" min="0.1" max="1" />
+    
+
       </aside>
 
       <main class="image-container">

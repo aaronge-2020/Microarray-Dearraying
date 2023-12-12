@@ -1,58 +1,70 @@
-import {
-  loadModel,
-  watershedAlgorithm,
-  preprocessAndPredict,
-  processAndVisualizeImage,
-  visualizePredictions,
-} from "./core_detection.js";
+import { loadModel, runPipeline, loadOpenCV } from "./core_detection.js";
 
 // Main event listener for file upload
 const fileInput = document.getElementById("fileInput");
 const thresholdSlider = document.getElementById("thresholdSlider");
 const thresholdValueDisplay = document.getElementById("thresholdValue");
+const minAreaInput = document.getElementById("minAreaInput");
+const maxAreaInput = document.getElementById("maxAreaInput");
+const disTransformMultiplierInput = document.getElementById(
+  "disTransformMultiplierInput"
+);
 const originalImageContainer = document.getElementById("originalImage");
-const processedImageContainer = document.getElementById("processedImage");
-let currentThreshold = parseFloat(thresholdSlider.value);
+const processedImageCanvas = document.getElementById("processedImage");
+processedImageCanvas.width = 512; // Set this to the desired value
+processedImageCanvas.height = 512; // Set this to the desired value
 
 const model = await loadModel("./tfjs_model/model.json");
+
+loadOpenCV();
+
+// Event listeners for input changes
+thresholdSlider.addEventListener("input", updateVisualization);
+minAreaInput.addEventListener("change", updateVisualization);
+maxAreaInput.addEventListener("change", updateVisualization);
+disTransformMultiplierInput.addEventListener("change", updateVisualization);
+
+// Function to update visualization based on input changes
+function updateVisualization() {
+  const threshold = parseFloat(thresholdSlider.value);
+  thresholdValueDisplay.textContent = threshold.toFixed(2);
+  if (
+    originalImageContainer.src[originalImageContainer.src.length - 1] !== "#"
+  ) {
+    const minArea = parseInt(minAreaInput.value, 10);
+    const maxArea = parseInt(maxAreaInput.value, 10);
+    const disTransformMultiplier = parseFloat(
+      disTransformMultiplierInput.value
+    );
+    runPipeline(
+      originalImageContainer,
+      model,
+      threshold,
+      minArea,
+      maxArea,
+      disTransformMultiplier,
+      processedImageCanvas
+    );
+  }
+}
 
 fileInput.addEventListener("change", async function (e) {
   const file = e.target.files[0];
   if (file && file.type.startsWith("image/")) {
     const reader = new FileReader();
     reader.onload = async function (event) {
-      const img = new Image();
-      img.onload = async function () {
-        // Display the original image
-        originalImageContainer.src = event.target.result;
-
-        // Visualize the predictions
-        await processAndVisualizeImage(
-          model,
-          originalImageContainer,
-          processedImageContainer,
-          currentThreshold
-        );
+      originalImageContainer.onload = async function () {
+        // Once the image is loaded, run the full pipeline
+        updateVisualization();
       };
-      img.src = event.target.result;
+      originalImageContainer.src = event.target.result;
     };
     reader.readAsDataURL(file);
   }
 });
-// Update the threshold value display and re-process the image when the slider is moved
-thresholdSlider.addEventListener("input", function () {
-  currentThreshold = parseFloat(this.value);
-  thresholdValueDisplay.textContent = currentThreshold.toFixed(2);
-  // Re-process the last uploaded image with the new threshold if it's already loaded
-  if (originalImageContainer.src !== "#") {
-    processAndVisualizeImage(
-      model,
-      originalImageContainer,
-      processedImageContainer,
-      currentThreshold
-    );
-  }
-});
+
+// Append the canvas to your image container
+document.querySelector(".image-container").appendChild(processedImageCanvas);
 
 // Add drag and drop functionality (optional)
 const label = document.querySelector(".file-input-label");
