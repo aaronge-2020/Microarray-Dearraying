@@ -10,6 +10,10 @@ const disTransformMultiplierInput = document.getElementById(
   "disTransformMultiplierInput"
 );
 const originalImageContainer = document.getElementById("originalImage");
+
+originalImageContainer.width = 512; // Set this to the desired value
+originalImageContainer.height = 512; // Set this to the desired value
+
 const processedImageCanvas = document.getElementById("processedImage");
 processedImageCanvas.width = 512; // Set this to the desired value
 processedImageCanvas.height = 512; // Set this to the desired value
