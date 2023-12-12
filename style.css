@@ -4,6 +4,42 @@ body, html {
     height: 100%;
     font-family: Arial, sans-serif;
 }
+header {
+  background: #f8f9fa;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ccc;
+}
+
+header .logo h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+
+nav ul {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+nav ul li {
+  margin-left: 20px;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: #007bff;
+  transition: color 0.3s; /* Smooth transition for hover effects */
+}
+
+nav ul li a:hover {
+  color: #0056b3; /* Darken link color on hover for interaction feedback */
+}
+
 
 .app-container {
     display: flex;
