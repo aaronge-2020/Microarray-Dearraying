@@ -1,0 +1,104 @@
+body, html {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: #f2f2f2; /* Adding a light background color for contrast */
+  }
+  
+  .container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensure it at least covers the viewport */
+  }
+  
+  header {
+    background: #f8f9fa;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  header .logo h1 {
+    margin: 0;
+    font-size: 24px;
+  }
+  
+  nav ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+  }
+  
+  nav ul li {
+    margin-left: 20px;
+  }
+  
+  nav ul li a {
+    text-decoration: none;
+    color: #007bff;
+    transition: color 0.3s; /* Smooth transition for hover effects */
+  }
+  
+  nav ul li a:hover {
+    color: #0056b3; /* Darken link color on hover for interaction feedback */
+  }
+  
+  .main-content {
+    display: flex;
+    flex-grow: 1; /* Grow to take up any remaining space */
+  }
+  
+  .sidebar {
+    background: #e9ecef;
+    padding: 20px;
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .sidebar button {
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: background-color 0.3s; /* Smooth background transition for hover effects */
+  }
+  
+  .sidebar button:hover {
+    background-color: #0056b3; /* Darken button background on hover */
+  }
+  
+  .image-container {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly; /* Distribute space evenly around the images */
+    padding: 20px; /* Add some padding around the container */
+  }
+  
+  .image-container img {
+    max-width: 48%; /* Adjust width to allow for two images side by side */
+    max-height: calc(100vh - 100px); /* Adjust the height of the images to fit within the viewport */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Add a subtle shadow for depth */
+    margin: 0 10px; /* Add some margin between images */
+    border-radius: 8px; /* Slightly round the corners of the images */
+  }
+  
+  /* Additional styles for responsiveness */
+  @media (max-width: 768px) {
+    .main-content {
+      flex-direction: column;
+    }
+  
+    .image-container img {
+      max-width: 90%; /* Allow each image to take more width on smaller screens */
+      margin-bottom: 20px; /* Add margin at the bottom for stacked layout */
+    }
+  }
+  

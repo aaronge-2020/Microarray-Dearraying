@@ -280,7 +280,7 @@ function visualizeSortedRows(rows, plotDivId) {
     rows.forEach((row, rowIdx) => {
         row.forEach((pointInfo, colIdx) => {
             const [x, y] = pointInfo.point;
-            const hoverText = `Row: ${rowIdx}, Col: ${colIdx}`;
+            const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x}, Y: ${y}`;
             
             if (pointInfo.isImaginary) {
                 imaginaryPoints.x.push(x);

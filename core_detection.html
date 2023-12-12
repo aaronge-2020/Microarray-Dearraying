@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tissue Segmentation Tool</title>
+<link rel="stylesheet" href="style_core_detect.css">
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">
+      <h1>Tissue Segmentation Tool</h1>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="#home">Home</a></li>
+        <li><a href="#demo">Demo</a></li>
+        <li><a href="#dataset">Dataset</a></li>
+        <li><a href="#blog">Blog</a></li>
+        <li><a href="#paper">Paper</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="main-content">
+    <aside class="sidebar">
+      <button id="upload">Upload</button>
+      <button id="addMask">Add Mask</button>
+      <button id="removeArea">Remove Area</button>
+      <button id="reset">Reset</button>
+      <button id="multiMask">Multi-mask</button>
+      <button id="cutOutObject">Cut out object</button>
+    </aside>
+
+    <main class="image-container">
+        <img id="originalImage" src="#" alt="Original Tissue">
+        <img id="processedImage" src="#" alt="Processed Tissue">
+      </main>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

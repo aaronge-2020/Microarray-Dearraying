@@ -13,6 +13,9 @@ import {
 
 } from './delaunay_triangulation.js';
 
+import{
+    loadModel,
+} from './core_detection.js';
 
 function handleFileLoad(event) {
     try {
