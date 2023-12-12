@@ -1,58 +1,67 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const uploadButton = document.getElementById('upload');
-    const originalImageContainer = document.getElementById('originalImage');
-    const processedImageContainer = document.getElementById('processedImage');
-  
-    uploadButton.addEventListener('click', function() {
-      let fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.accept = 'image/*';
-      fileInput.onchange = e => {
-        let file = e.target.files[0];
-        let reader = new FileReader();
-        reader.onload = function(e) {
-          // Display the original image
-          originalImageContainer.src = e.target.result;
-  
-          let img = new Image();
-          img.onload = function() {
-            // Create a canvas to manipulate the image
-            let canvas = document.createElement('canvas');
-            let ctx = canvas.getContext('2d');
-            canvas.width = 512;
-            canvas.height = 512;
-  
-            // Draw the image onto the canvas and resize it
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  
-            // Get the image data
-            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let data = imageData.data;
-  
-            // Normalize pixel values to between 0 and 1
-            for (let i = 0; i < data.length; i += 4) {
-              data[i]     = data[i] / 255;     // Red
-              data[i + 1] = data[i + 1] / 255; // Green
-              data[i + 2] = data[i + 2] / 255; // Blue
-              // Alpha channel doesn't need to be normalized (remains 255 for full opacity)
-            }
-  
-            // Update the canvas with the new image data
-            ctx.putImageData(imageData, 0, 0);
-  
-            // Set the source of the processed image container to the canvas data
-            processedImageContainer.src = canvas.toDataURL();
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+import {
+  loadModel,
+  watershedAlgorithm,
+  preprocessAndPredict,
+  processAndVisualizeImage,
+  visualizePredictions,
+} from "./core_detection.js";
+
+// Main event listener for file upload
+const fileInput = document.getElementById("fileInput");
+const thresholdSlider = document.getElementById("thresholdSlider");
+const thresholdValueDisplay = document.getElementById("thresholdValue");
+const originalImageContainer = document.getElementById("originalImage");
+const processedImageContainer = document.getElementById("processedImage");
+let currentThreshold = parseFloat(thresholdSlider.value);
+
+const model = await loadModel("./tfjs_model/model.json");
+
+fileInput.addEventListener("change", async function (e) {
+  const file = e.target.files[0];
+  if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = async function (event) {
+      const img = new Image();
+      img.onload = async function () {
+        // Display the original image
+        originalImageContainer.src = event.target.result;
+
+        // Visualize the predictions
+        await processAndVisualizeImage(
+          model,
+          originalImageContainer,
+          processedImageContainer,
+          currentThreshold
+        );
       };
-      fileInput.click(); // Simulate click on file input
-    });
-  });
-  
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+// Update the threshold value display and re-process the image when the slider is moved
+thresholdSlider.addEventListener("input", function () {
+  currentThreshold = parseFloat(this.value);
+  thresholdValueDisplay.textContent = currentThreshold.toFixed(2);
+  // Re-process the last uploaded image with the new threshold if it's already loaded
+  if (originalImageContainer.src !== "#") {
+    processAndVisualizeImage(
+      model,
+      originalImageContainer,
+      processedImageContainer,
+      currentThreshold
+    );
+  }
+});
 
-const modelUrl = './tfjs_model/model.json';
+// Add drag and drop functionality (optional)
+const label = document.querySelector(".file-input-label");
+label.ondragover = label.ondragenter = function (evt) {
+  evt.preventDefault();
+};
 
-const core_detection_model = loadModel(modelUrl);
-
+label.ondrop = function (evt) {
+  evt.preventDefault();
+  fileInput.files = evt.dataTransfer.files;
+  fileInput.dispatchEvent(new Event("change"));
+};
