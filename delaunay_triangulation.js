@@ -264,6 +264,7 @@ function traveling_algorithm(
   }));
 
   let firstImaginary = true;
+  let imaginaryPointsCounter = 0; // Counter for consecutive imaginary points
 
   while (S.length > 0) {
     let startVector = S.reduce((prev, curr) =>
@@ -274,10 +275,6 @@ function traveling_algorithm(
     S = S.filter((v) => v.index !== startVector.index);
 
     while (true) {
-      // Check if Vj is close to (417.06349173753966, 516.463157355465)
-      if (calculateDistance(Vj, [42.400909090909096, 128.4116216216216]) < 4) {
-        console.log("Vj is close to (42.400909090909096, 128.4116216216216)");
-      }
 
       let nextVector = S.find((v) => calculateDistance(v.start, Vj) < 1e-1);
       if (nextVector) {
@@ -285,10 +282,8 @@ function traveling_algorithm(
         A1.push(nextVector);
         S = S.filter((v) => v.index !== nextVector.index);
         firstImaginary = true;
-        // Check if Vj is close to (569.7187335786222, 624.6232795861754)
-        if (calculateDistance(Vj, [42.400909090909096, 128.4116216216216]) < 4) {
-          console.log("Vj is close to (569.7187335786222, 624.6232795861754)");
-        }
+        imaginaryPointsCounter = 0;
+        
       } else {
         if (!isCloseToImageWidth(Vj, imageWidth, gamma)) {
           let candidates = S.filter((v) =>
@@ -304,15 +299,8 @@ function traveling_algorithm(
             A1.push(closestVector);
             S = S.filter((v) => v.index !== closestVector.index);
             firstImaginary = true;
+            imaginaryPointsCounter = 0;
 
-            // Check if Vj is close to (569.7187335786222, 624.6232795861754)
-            if (
-              calculateDistance(Vj, [42.400909090909096, 128.4116216216216]) < 4
-            ) {
-              console.log(
-                "Vj is close to (569.7187335786222, 624.6232795861754)"
-              );
-            }
           } else {
             let deltaRad = originAngle * (Math.PI / 180);
             let VjPrime = [
@@ -328,6 +316,17 @@ function traveling_algorithm(
 
             if (firstImaginary) {
               imaginaryVector.isImaginary = false;
+            } else {
+              imaginaryPointsCounter++; // Increment counter for each consecutive imaginary point
+            }
+
+            if (imaginaryPointsCounter > 50) {
+              alert(
+                "Invalid hyperparameters: too many consecutive imaginary points."
+              );
+              throw new Error(
+                "Invalid hyperparameters: too many consecutive imaginary points."
+              );
             }
 
             A1.push(imaginaryVector);
@@ -335,13 +334,6 @@ function traveling_algorithm(
             imaginaryPointsIndex--;
             firstImaginary = false;
 
-            if (
-              calculateDistance(Vj, [417.06349173753966, 516.463157355465]) < 4
-            ) {
-              console.log(
-                "Vj is close to (569.7187335786222, 624.6232795861754)"
-              );
-            }
           }
         } else {
           let uniqueRow = A1.map((vec) => ({
@@ -356,6 +348,8 @@ function traveling_algorithm(
           );
           A.push(uniqueRow);
           firstImaginary = true;
+          imaginaryPointsCounter = 0;
+
           break;
         }
       }
@@ -363,6 +357,7 @@ function traveling_algorithm(
   }
   return A;
 }
+
 function isPointInList(pointIndex, edgeList) {
   return edgeList.some(
     (edge) => edge[0] === pointIndex || edge[1] === pointIndex
@@ -422,7 +417,7 @@ function visualizeSortedRows(rows, plotDivId, minX, minY) {
   rows.forEach((row, rowIdx) => {
     row.forEach((pointInfo, colIdx) => {
       const x = pointInfo.point[0] + minX;
-      const y = (pointInfo.point[1] + minY);
+      const y = pointInfo.point[1] + minY;
       const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
         2
       )}, Y: ${y.toFixed(2)}`;
