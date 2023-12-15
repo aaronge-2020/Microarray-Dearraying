@@ -177,8 +177,7 @@ async function runTravelingAlgorithm(normalizedCores, params) {
 }
 
 // Updated function to accept hyperparameters and cores data
-async function loadDataAndDetermineParams(cores, params) {
-  const normalizedCores = preprocessCores(cores);
+async function loadDataAndDetermineParams(normalizedCores, params) {
   const delaunayTriangleEdges = getEdgesFromTriangulation(normalizedCores);
   const lengthFilteredEdges = filterEdgesByLength(
     delaunayTriangleEdges,

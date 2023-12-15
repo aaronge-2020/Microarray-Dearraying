@@ -275,18 +275,18 @@ function traveling_algorithm(
 
     while (true) {
       // Check if Vj is close to (417.06349173753966, 516.463157355465)
-      if (calculateDistance(Vj, [417.06349173753966, 516.463157355465]) < 4) {
-        console.log("Vj is close to (569.7187335786222, 624.6232795861754)");
+      if (calculateDistance(Vj, [42.400909090909096, 128.4116216216216]) < 4) {
+        console.log("Vj is close to (42.400909090909096, 128.4116216216216)");
       }
 
-      let nextVector = S.find((v) => calculateDistance(v.start, Vj) < 1e-3);
+      let nextVector = S.find((v) => calculateDistance(v.start, Vj) < 1e-1);
       if (nextVector) {
         Vj = nextVector.end;
         A1.push(nextVector);
         S = S.filter((v) => v.index !== nextVector.index);
         firstImaginary = true;
         // Check if Vj is close to (569.7187335786222, 624.6232795861754)
-        if (calculateDistance(Vj, [417.06349173753966, 516.463157355465]) < 4) {
+        if (calculateDistance(Vj, [42.400909090909096, 128.4116216216216]) < 4) {
           console.log("Vj is close to (569.7187335786222, 624.6232795861754)");
         }
       } else {
@@ -307,7 +307,7 @@ function traveling_algorithm(
 
             // Check if Vj is close to (569.7187335786222, 624.6232795861754)
             if (
-              calculateDistance(Vj, [417.06349173753966, 516.463157355465]) < 4
+              calculateDistance(Vj, [42.400909090909096, 128.4116216216216]) < 4
             ) {
               console.log(
                 "Vj is close to (569.7187335786222, 624.6232795861754)"
@@ -355,6 +355,7 @@ function traveling_algorithm(
               ) === i
           );
           A.push(uniqueRow);
+          firstImaginary = true;
           break;
         }
       }
@@ -421,7 +422,7 @@ function visualizeSortedRows(rows, plotDivId, minX, minY) {
   rows.forEach((row, rowIdx) => {
     row.forEach((pointInfo, colIdx) => {
       const x = pointInfo.point[0] + minX;
-      const y = pointInfo.point[1] + minY;
+      const y = -(pointInfo.point[1] + minY);
       const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
         2
       )}, Y: ${y.toFixed(2)}`;
