@@ -13,7 +13,6 @@ function preprocessCores(cores) {
   const minX = Math.min(...cores.map((core) => core.x));
   const minY = Math.min(...cores.map((core) => core.y));
 
-  
   window.preprocessingData = {
     minX,
     minY,
@@ -264,6 +263,8 @@ function traveling_algorithm(
     isImaginary: false,
   }));
 
+  let firstImaginary = true;
+
   while (S.length > 0) {
     let startVector = S.reduce((prev, curr) =>
       prev.start[0] < curr.start[0] ? prev : curr
@@ -272,14 +273,22 @@ function traveling_algorithm(
     let Vj = startVector.end;
     S = S.filter((v) => v.index !== startVector.index);
 
-    let firstImaginary = true;
     while (true) {
+      // Check if Vj is close to (417.06349173753966, 516.463157355465)
+      if (calculateDistance(Vj, [417.06349173753966, 516.463157355465]) < 4) {
+        console.log("Vj is close to (569.7187335786222, 624.6232795861754)");
+      }
+
       let nextVector = S.find((v) => calculateDistance(v.start, Vj) < 1e-3);
       if (nextVector) {
         Vj = nextVector.end;
         A1.push(nextVector);
         S = S.filter((v) => v.index !== nextVector.index);
         firstImaginary = true;
+        // Check if Vj is close to (569.7187335786222, 624.6232795861754)
+        if (calculateDistance(Vj, [417.06349173753966, 516.463157355465]) < 4) {
+          console.log("Vj is close to (569.7187335786222, 624.6232795861754)");
+        }
       } else {
         if (!isCloseToImageWidth(Vj, imageWidth, gamma)) {
           let candidates = S.filter((v) =>
@@ -295,6 +304,15 @@ function traveling_algorithm(
             A1.push(closestVector);
             S = S.filter((v) => v.index !== closestVector.index);
             firstImaginary = true;
+
+            // Check if Vj is close to (569.7187335786222, 624.6232795861754)
+            if (
+              calculateDistance(Vj, [417.06349173753966, 516.463157355465]) < 4
+            ) {
+              console.log(
+                "Vj is close to (569.7187335786222, 624.6232795861754)"
+              );
+            }
           } else {
             let deltaRad = originAngle * (Math.PI / 180);
             let VjPrime = [
@@ -307,10 +325,23 @@ function traveling_algorithm(
               index: imaginaryPointsIndex,
               isImaginary: true,
             };
+
+            if (firstImaginary) {
+              imaginaryVector.isImaginary = false;
+            }
+
             A1.push(imaginaryVector);
             Vj = VjPrime;
             imaginaryPointsIndex--;
             firstImaginary = false;
+
+            if (
+              calculateDistance(Vj, [417.06349173753966, 516.463157355465]) < 4
+            ) {
+              console.log(
+                "Vj is close to (569.7187335786222, 624.6232795861754)"
+              );
+            }
           }
         } else {
           let uniqueRow = A1.map((vec) => ({
@@ -385,9 +416,8 @@ function visualizeSortedRows(rows, plotDivId, minX, minY) {
     hovertemplate: "%{text}",
   };
 
-  window.finalCores = []
+  window.finalCores = [];
 
-  
   rows.forEach((row, rowIdx) => {
     row.forEach((pointInfo, colIdx) => {
       const x = pointInfo.point[0] + minX;
@@ -416,7 +446,6 @@ function visualizeSortedRows(rows, plotDivId, minX, minY) {
         y: y,
         isImaginary: pointInfo.isImaginary,
       });
-
     });
   });
 
@@ -439,70 +468,6 @@ function visualizeSortedRows(rows, plotDivId, minX, minY) {
   // Create the plot using Plotly
   Plotly.default.newPlot(plotDivId, data, layout);
 }
-
-// function visualizeSortedRows(rows, plotDivId) {
-//   // Prepare the data for Plotly
-//   let realPoints = {
-//     x: [],
-//     y: [],
-//     type: "scatter",
-//     mode: "markers",
-//     name: "Real Points",
-//     marker: { color: "blue" },
-//     text: [],
-//     hoverinfo: "text",
-//     hovertemplate: "%{text}",
-//   };
-//   let imaginaryPoints = {
-//     x: [],
-//     y: [],
-//     type: "scatter",
-//     mode: "markers",
-//     name: "Imaginary Points",
-//     marker: { color: "red" },
-//     text: [],
-//     hoverinfo: "text",
-//     hovertemplate: "%{text}",
-//   };
-
-//   rows.forEach((row, rowIdx) => {
-//     row.forEach((pointInfo, colIdx) => {
-//       const [x, y] = pointInfo.point;
-//       const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
-//         2
-//       )}, Y: ${y.toFixed(2)}`;
-
-//       if (pointInfo.isImaginary) {
-//         imaginaryPoints.x.push(x);
-//         imaginaryPoints.y.push(y);
-//         imaginaryPoints.text.push(hoverText);
-//       } else {
-//         realPoints.x.push(x);
-//         realPoints.y.push(y);
-//         realPoints.text.push(hoverText);
-//       }
-//     });
-//   });
-
-//   // Define layout for the plot
-//   const layout = {
-//     title: "Sorted Rows Visualization",
-//     xaxis: {
-//       title: "X coordinate",
-//     },
-//     yaxis: {
-//       title: "Y coordinate",
-//     },
-//     hovermode: "closest", // Display the hover info for the closest point
-//     margin: { t: 40 }, // Adjust top margin to accommodate the title
-//   };
-
-//   // Combine real and imaginary points data
-//   const data = [realPoints, imaginaryPoints];
-
-//   // Create the plot using Plotly
-//   Plotly.default.newPlot(plotDivId, data, layout);
-// }
 
 function averageEdgeLength(vectors) {
   // Create a map to store the connections
