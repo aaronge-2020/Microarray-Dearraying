@@ -168,7 +168,7 @@ async function runTravelingAlgorithm(normalizedCores, params) {
     params.originAngle,
     params.radiusMultiplier
   );
-  let sortedRows = rows.sort((a, b) => b[0]["point"][1] - a[0]["point"][1]);
+  let sortedRows = rows.sort((a, b) => a[0]["point"][1] - b[0]["point"][1]);
 
   visualizeSortedRows(sortedRows, "visualization", window.preprocessingData.minX, window.preprocessingData.minY);
 }
