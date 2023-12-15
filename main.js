@@ -78,8 +78,7 @@ async function initFromURL() {
 
     if (jsonData) {
       // Assuming you have a function to setup UI values or something similar
-      loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
-      runTravelingAlgorithm(window.cores, getHyperparametersFromUI());
+      applyAndVisualize();
     }
   }
 }
@@ -127,10 +126,12 @@ document
   .getElementById("apply-hyperparameters")
   .addEventListener("click", applyAndVisualize);
 
-function applyAndVisualize() {
+async function applyAndVisualize() {
   // Collect hyperparameter values from the UI
 
   if (window.cores) {
+   await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
+
     // Process and visualize with new hyperparameters
     runTravelingAlgorithm(window.cores, getHyperparametersFromUI());
   } else {
@@ -145,17 +146,6 @@ async function runTravelingAlgorithm(normalizedCores, params) {
     normalizedCores,
     params.thresholdMultiplier
   );
-
-  // const [bestEdgeSet, bestEdgeSetLength, originAngle] =
-  //   await determineImageRotation(
-  //     cores,
-  //     lengthFilteredEdges,
-  //     params.minAngle,
-  //     params.maxAngle,
-  //     params.angleStepSize,
-  //     params.angleThreshold
-  //   );
-
 
   let bestEdgeSet = filterEdgesByAngle(lengthFilteredEdges, normalizedCores, params.thresholdAngle, params.originAngle)
   bestEdgeSet = limitConnections(bestEdgeSet, normalizedCores);
