@@ -9,6 +9,7 @@ import {
   calculateAverageDistance,
   visualizeSortedRows,
   traveling_algorithm,
+  
 } from "./delaunay_triangulation.js";
 
 function getHyperparametersFromUI() {
@@ -136,8 +137,7 @@ function applyAndVisualize() {
   }
 }
 
-async function runTravelingAlgorithm(cores, params) {
-  const normalizedCores = preprocessCores(cores);
+async function runTravelingAlgorithm(normalizedCores, params) {
   const delaunayTriangleEdges = getEdgesFromTriangulation(normalizedCores);
   const lengthFilteredEdges = filterEdgesByLength(
     delaunayTriangleEdges,
@@ -173,7 +173,18 @@ async function runTravelingAlgorithm(cores, params) {
   );
   let sortedRows = rows.sort((a, b) => b[0]["point"][1] - a[0]["point"][1]);
 
-  visualizeSortedRows(sortedRows, "visualization");
+  rows.forEach((row, rowIndex) => {
+    row.forEach((pointInfo, colIndex) => {
+      const coreIndex = pointInfo.index;
+      if (coreIndex >= 0) {
+        window.cores[coreIndex].row = rowIndex;
+        window.cores[coreIndex].col = colIndex;
+        window.cores[coreIndex].isImaginary = pointInfo.isImaginary;
+      }
+    });
+  });
+
+  visualizeSortedRows(sortedRows, "visualization", window.preprocessingData.minX, window.preprocessingData.minY);
 }
 
 // Updated function to accept hyperparameters and cores data
@@ -219,3 +230,32 @@ async function loadDataAndDetermineParams(cores, params) {
   params.imageWidth = imageWidth;
   params.gamma = 0.75 * d;
 }
+
+function saveUpdatedCores() {
+  if (!window.cores) {
+    alert("No data available to save.");
+    return;
+  }
+  
+  let savedCores = [...window.cores]
+  // Add the minX and minY values to the cores data, ensuring not to change the original data
+  savedCores.forEach(core => {
+    core.x = core.x + window.preprocessingData.minX;
+    core.y = core.y + window.preprocessingData.minY;
+  });
+
+  
+  // Download the updated cores data as a JSON file
+
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedCores));
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute("href", dataStr);
+  downloadAnchorNode.setAttribute("download", "updated_cores.json");
+  document.body.appendChild(downloadAnchorNode);
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+}
+
+
+document.getElementById("saveResults").addEventListener("click", saveUpdatedCores);
+

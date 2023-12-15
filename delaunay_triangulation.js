@@ -11,8 +11,22 @@ function preprocessCores(cores) {
   }
 
   const minX = Math.min(...cores.map((core) => core.x));
-  const maxY = Math.max(...cores.map((core) => core.y));
-  return cores.map((core) => ({ x: core.x - minX, y: maxY - core.y }));
+  const minY = Math.min(...cores.map((core) => core.y));
+
+  
+  window.preprocessingData = {
+    minX,
+    minY,
+  };
+
+  // Normalize the coordinates
+  return cores.map((core) => {
+    // Perform the transformation
+    core.x = core.x - minX;
+    core.y = core.y - minY;
+
+    return core;
+  });
 }
 
 function getEdgesFromTriangulation(cores) {
@@ -346,7 +360,7 @@ function sortEdgesAndAddIsolatedPoints(bestEdgeSet, normalizedCoordinates) {
   return bestEdgeSetIndices;
 }
 
-function visualizeSortedRows(rows, plotDivId) {
+function visualizeSortedRows(rows, plotDivId, minX, minY) {
   // Prepare the data for Plotly
   let realPoints = {
     x: [],
@@ -373,16 +387,22 @@ function visualizeSortedRows(rows, plotDivId) {
 
   rows.forEach((row, rowIdx) => {
     row.forEach((pointInfo, colIdx) => {
-      const [x, y] = pointInfo.point;
-      const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
-        2
-      )}, Y: ${y.toFixed(2)}`;
-
       if (pointInfo.isImaginary) {
+        const x = pointInfo.point[0] + minX;
+        const y = pointInfo.point[1] + minY;
+        const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
+          2
+        )}, Y: ${y.toFixed(2)}`;
         imaginaryPoints.x.push(x);
         imaginaryPoints.y.push(y);
         imaginaryPoints.text.push(hoverText);
       } else {
+        // Use original coordinates
+        const x = pointInfo.point[0] + minX;
+        const y = pointInfo.point[1] + minY;
+        const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
+          2
+        )}, Y: ${y.toFixed(2)}`;
         realPoints.x.push(x);
         realPoints.y.push(y);
         realPoints.text.push(hoverText);
@@ -409,6 +429,70 @@ function visualizeSortedRows(rows, plotDivId) {
   // Create the plot using Plotly
   Plotly.default.newPlot(plotDivId, data, layout);
 }
+
+// function visualizeSortedRows(rows, plotDivId) {
+//   // Prepare the data for Plotly
+//   let realPoints = {
+//     x: [],
+//     y: [],
+//     type: "scatter",
+//     mode: "markers",
+//     name: "Real Points",
+//     marker: { color: "blue" },
+//     text: [],
+//     hoverinfo: "text",
+//     hovertemplate: "%{text}",
+//   };
+//   let imaginaryPoints = {
+//     x: [],
+//     y: [],
+//     type: "scatter",
+//     mode: "markers",
+//     name: "Imaginary Points",
+//     marker: { color: "red" },
+//     text: [],
+//     hoverinfo: "text",
+//     hovertemplate: "%{text}",
+//   };
+
+//   rows.forEach((row, rowIdx) => {
+//     row.forEach((pointInfo, colIdx) => {
+//       const [x, y] = pointInfo.point;
+//       const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
+//         2
+//       )}, Y: ${y.toFixed(2)}`;
+
+//       if (pointInfo.isImaginary) {
+//         imaginaryPoints.x.push(x);
+//         imaginaryPoints.y.push(y);
+//         imaginaryPoints.text.push(hoverText);
+//       } else {
+//         realPoints.x.push(x);
+//         realPoints.y.push(y);
+//         realPoints.text.push(hoverText);
+//       }
+//     });
+//   });
+
+//   // Define layout for the plot
+//   const layout = {
+//     title: "Sorted Rows Visualization",
+//     xaxis: {
+//       title: "X coordinate",
+//     },
+//     yaxis: {
+//       title: "Y coordinate",
+//     },
+//     hovermode: "closest", // Display the hover info for the closest point
+//     margin: { t: 40 }, // Adjust top margin to accommodate the title
+//   };
+
+//   // Combine real and imaginary points data
+//   const data = [realPoints, imaginaryPoints];
+
+//   // Create the plot using Plotly
+//   Plotly.default.newPlot(plotDivId, data, layout);
+// }
 
 function averageEdgeLength(vectors) {
   // Create a map to store the connections
