@@ -78,6 +78,8 @@ async function initFromURL() {
 
     if (jsonData) {
       // Assuming you have a function to setup UI values or something similar
+     await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
+
       applyAndVisualize();
     }
   }
@@ -96,6 +98,7 @@ document.getElementById("loadJsonBtn").addEventListener("click", async () => {
     return null;
   }
   window.cores = preprocessCores(jsonData);
+  await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
 
   applyAndVisualize();
 });
@@ -130,8 +133,6 @@ async function applyAndVisualize() {
   // Collect hyperparameter values from the UI
 
   if (window.cores) {
-   await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
-
     // Process and visualize with new hyperparameters
     runTravelingAlgorithm(window.cores, getHyperparametersFromUI());
   } else {
