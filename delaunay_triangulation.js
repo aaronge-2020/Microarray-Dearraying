@@ -385,28 +385,38 @@ function visualizeSortedRows(rows, plotDivId, minX, minY) {
     hovertemplate: "%{text}",
   };
 
+  window.finalCores = []
+
+  
   rows.forEach((row, rowIdx) => {
     row.forEach((pointInfo, colIdx) => {
+      const x = pointInfo.point[0] + minX;
+      const y = pointInfo.point[1] + minY;
+      const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
+        2
+      )}, Y: ${y.toFixed(2)}`;
+
       if (pointInfo.isImaginary) {
-        const x = pointInfo.point[0] + minX;
-        const y = pointInfo.point[1] + minY;
-        const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
-          2
-        )}, Y: ${y.toFixed(2)}`;
         imaginaryPoints.x.push(x);
         imaginaryPoints.y.push(y);
         imaginaryPoints.text.push(hoverText);
       } else {
         // Use original coordinates
-        const x = pointInfo.point[0] + minX;
-        const y = pointInfo.point[1] + minY;
-        const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
-          2
-        )}, Y: ${y.toFixed(2)}`;
+
         realPoints.x.push(x);
         realPoints.y.push(y);
         realPoints.text.push(hoverText);
       }
+
+      // Save final results to window.finalCores
+      window.finalCores.push({
+        row: rowIdx,
+        col: colIdx,
+        x: x,
+        y: y,
+        isImaginary: pointInfo.isImaginary,
+      });
+
     });
   });
 
