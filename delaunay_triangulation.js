@@ -422,20 +422,20 @@ function visualizeSortedRows(rows, plotDivId, minX, minY) {
   rows.forEach((row, rowIdx) => {
     row.forEach((pointInfo, colIdx) => {
       const x = pointInfo.point[0] + minX;
-      const y = -(pointInfo.point[1] + minY);
+      const y = (pointInfo.point[1] + minY);
       const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
         2
       )}, Y: ${y.toFixed(2)}`;
 
       if (pointInfo.isImaginary) {
         imaginaryPoints.x.push(x);
-        imaginaryPoints.y.push(y);
+        imaginaryPoints.y.push(-y);
         imaginaryPoints.text.push(hoverText);
       } else {
         // Use original coordinates
 
         realPoints.x.push(x);
-        realPoints.y.push(y);
+        realPoints.y.push(-y);
         realPoints.text.push(hoverText);
       }
 
@@ -591,6 +591,7 @@ export {
   calculateAverageDistance,
   determineImageRotation,
   traveling_algorithm,
+  sortEdgesAndAddIsolatedPoints,
 };
 // Call the function to load data and visualize
 // loadDataAndVisualize().catch(error => console.error('An error occurred:', error));

@@ -7,6 +7,7 @@ import {
   determineImageRotation,
   calculateGridWidth,
   calculateAverageDistance,
+  sortEdgesAndAddIsolatedPoints,
   visualizeSortedRows,
   traveling_algorithm,
   
@@ -145,15 +146,20 @@ async function runTravelingAlgorithm(normalizedCores, params) {
     params.thresholdMultiplier
   );
 
-  const [bestEdgeSet, bestEdgeSetLength, originAngle] =
-    await determineImageRotation(
-      cores,
-      lengthFilteredEdges,
-      params.minAngle,
-      params.maxAngle,
-      params.angleStepSize,
-      params.angleThreshold
-    );
+  // const [bestEdgeSet, bestEdgeSetLength, originAngle] =
+  //   await determineImageRotation(
+  //     cores,
+  //     lengthFilteredEdges,
+  //     params.minAngle,
+  //     params.maxAngle,
+  //     params.angleStepSize,
+  //     params.angleThreshold
+  //   );
+
+
+  let bestEdgeSet = filterEdgesByAngle(lengthFilteredEdges, normalizedCores, params.thresholdAngle, params.originAngle)
+  bestEdgeSet = limitConnections(bestEdgeSet, normalizedCores);
+  bestEdgeSet = sortEdgesAndAddIsolatedPoints(bestEdgeSet, normalizedCores);
 
   let coordinatesInput = bestEdgeSet.map(([start, end]) => {
     return [
