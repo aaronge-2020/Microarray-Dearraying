@@ -140,6 +140,17 @@ async function applyAndVisualize() {
   }
 }
 
+function rotatePoint(point, angle) {
+  const x = point[0];
+  const y = point[1];
+  const radians = (angle * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const newX = x * cos - y * sin;
+  const newY = x * sin + y * cos;
+  return [newX, newY];
+}
+
 async function runTravelingAlgorithm(normalizedCores, params) {
   const delaunayTriangleEdges = getEdgesFromTriangulation(normalizedCores);
   const lengthFilteredEdges = filterEdgesByLength(
@@ -154,8 +165,8 @@ async function runTravelingAlgorithm(normalizedCores, params) {
 
   let coordinatesInput = bestEdgeSet.map(([start, end]) => {
     return [
-      [cores[start].x, cores[start].y],
-      [cores[end].x, cores[end].y],
+      [normalizedCores[start].x, normalizedCores[start].y],
+      [normalizedCores[end].x, normalizedCores[end].y],
     ];
   });
 
@@ -168,10 +179,24 @@ async function runTravelingAlgorithm(normalizedCores, params) {
     params.originAngle,
     params.radiusMultiplier
   );
-  let sortedRows = rows.sort((a, b) => a[0]["point"][1] - b[0]["point"][1]);
+
+  // Temporarily rotate the first point of each row for sorting purposes
+  let sortingHelper = rows.map(row => {
+    return {
+      originalRow: row,
+      rotatedPoint: rotatePoint(row[0]["point"], -params.originAngle)
+    };
+  });
+
+  // Sort the rows based on the y-coordinate of the rotated first point in each row
+  sortingHelper.sort((a, b) => a.rotatedPoint[1] - b.rotatedPoint[1]);
+
+  // Extract the original rows in sorted order
+  let sortedRows = sortingHelper.map(item => item.originalRow);
 
   visualizeSortedRows(sortedRows, "visualization", window.preprocessingData.minX, window.preprocessingData.minY);
 }
+
 
 // Updated function to accept hyperparameters and cores data
 async function loadDataAndDetermineParams(normalizedCores, params) {

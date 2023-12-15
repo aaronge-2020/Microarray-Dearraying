@@ -325,7 +325,7 @@ function traveling_algorithm(
                 "Invalid hyperparameters: too many consecutive imaginary points."
               );
               throw new Error(
-                "Invalid hyperparameters: too many consecutive imaginary points."
+                "Invalid stopping distance: too many consecutive imaginary points."
               );
             }
 
