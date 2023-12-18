@@ -45,17 +45,57 @@
                     <button id="loadJsonBtn" type="button" class="load-json-btn">Load JSON</button>
 
                     <br>
-
-
-
                 </div>
 
-                <!-- Hyperparameter form section -->
+                <!-- Image file input section -->
+                <div class="file-upload-container">
+                    <label for="imageInput" class="file-dropzone">
+                        <div class="file-input-btn">Select an Image File</div>
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                        <p>Drop image file here</p>
+                        <br>
+                        <p>OR</p>
+                        <br>
+                        <label for="imgUrlInput">Paste in Image URL:</label>
+                        <input type="text" id="imgUrlInput" placeholder="Enter Image URL" value="" />
+                        <button id="loadImgBtn" type="button" class="load-img-btn">Load Image</button>
+
+                        <br>
+                    </label>
+                </div>
+
+
                 <div class="hyperparameters">
+
+
+
+                <!-- Hyperparameter form section -->
                     <h2>Hyperparameter Configuration</h2>
+
+                    <!-- Image Parameters Section -->
+                    <fieldset>
+                        <legend>Image Parameters</legend>
+                        <label for="userRadius">Core Radius:</label>
+                        <input type="range" id="userRadius" name="userRadius" min="1" max="100" value="20">
+                        <output id="radiusValue" for="userRadius">20</output>
+                        <!-- X Offset slider section -->
+
+                        <label for="xOffset">X Offset:</label>
+                        <input type="range" id="xOffset" name="xOffset" min="-100" max="100" value="0">
+                        <output id="xOffsetValue" for="xOffset">0</output>
+
+                        <!-- Y Offset slider section -->
+
+                        <label for="yOffset">Y Offset:</label>
+                        <input type="range" id="yOffset" name="yOffset" min="-100" max="100" value="0">
+                        <output id="yOffsetValue" for="yOffset">0</output>
+                    </fieldset>
+
+
                     <!-- Traveling Algorithm Section -->
                     <fieldset>
                         <legend>Traveling Algorithm Parameters</legend>
+
 
                         <label for="originAngle" title="Rotation of the image in degrees">Image Rotation</label>
                         <input type="number" id="originAngle" name="originAngle" step="1" value="0">
@@ -115,7 +155,7 @@
                         </fieldset>
 
                         <!-- Image Rotation Section -->
-                        <fieldset >
+                        <fieldset>
                             <legend>Image Rotation Parameters</legend>
 
                             <label for="minAngle" title="Minimum angle to test for image rotation">Minimum Angle</label>
@@ -132,7 +172,7 @@
                             <label for="angleThreshold"
                                 title="Angle threshold used when filtering edges by angle for image rotation">Angle
                                 Threshold</label>
-                            <input type="number" id="angleThreshold" name="angleThreshold" step="1" value="10">
+                            <input type="number" id="angleThreshold" name="angleThreshold" step="1" value="20">
                         </fieldset>
 
                     </div>
@@ -146,14 +186,15 @@
 
         </div>
         <div class="content" style="width: 100%; height: 100%">
-            <!-- Carousel for visualizations -->
-            <div id="visualization-carousel" class="carousel" style="width: 100%; height: 100%">
-                <!-- Add SVG container for D3 visualizations -->
+            <!-- Existing carousel for visualizations -->
+            <div id="visualization-carousel" class="carousel" style="width: 100%; height: 100%; display: none;">
                 <div id="visualization" style="width: 100%; height: 100%"></div>
-
-                <!-- Other carousel slides can go here -->
             </div>
+
+            <!-- Canvas for displaying and interacting with the image -->
+            <canvas id="coreCanvas" width="1024" height="1024" style="border:1px solid #000000;"></canvas>
         </div>
+
 
     </div>
 

@@ -10,7 +10,6 @@ import {
   sortEdgesAndAddIsolatedPoints,
   visualizeSortedRows,
   traveling_algorithm,
-  
 } from "./delaunay_triangulation.js";
 
 function getHyperparametersFromUI() {
@@ -25,7 +24,7 @@ function getHyperparametersFromUI() {
   const radiusMultiplier = parseFloat(
     document.getElementById("radiusMultiplier").value
   );
-  
+
   const minAngle = parseFloat(document.getElementById("minAngle").value);
   const maxAngle = parseFloat(document.getElementById("maxAngle").value);
   const angleStepSize = parseFloat(
@@ -77,10 +76,12 @@ async function initFromURL() {
     const jsonData = await loadJSONFromURL(fileURL);
     window.cores = preprocessCores(jsonData);
 
-
     if (jsonData) {
       // Assuming you have a function to setup UI values or something similar
-     await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
+      await loadDataAndDetermineParams(
+        window.cores,
+        getHyperparametersFromUI()
+      );
 
       applyAndVisualize();
     }
@@ -143,7 +144,13 @@ async function applyAndVisualize() {
 
   if (window.cores) {
     // Process and visualize with new hyperparameters
-    runTravelingAlgorithm(window.cores, getHyperparametersFromUI());
+    await runTravelingAlgorithm(window.cores, getHyperparametersFromUI());
+    const imageSrc =
+      document.getElementById("imageInput").files.length > 0
+        ? URL.createObjectURL(document.getElementById("imageInput").files[0])
+        : "path/to/default/image.jpg";
+
+    drawCoresOnCanvas(imageSrc, window.cores);
   } else {
     console.error("No cores data available. Please load a file first.");
   }
@@ -168,7 +175,12 @@ async function runTravelingAlgorithm(normalizedCores, params) {
     params.thresholdMultiplier
   );
 
-  let bestEdgeSet = filterEdgesByAngle(lengthFilteredEdges, normalizedCores, params.thresholdAngle, params.originAngle)
+  let bestEdgeSet = filterEdgesByAngle(
+    lengthFilteredEdges,
+    normalizedCores,
+    params.thresholdAngle,
+    params.originAngle
+  );
   bestEdgeSet = limitConnections(bestEdgeSet, normalizedCores);
   bestEdgeSet = sortEdgesAndAddIsolatedPoints(bestEdgeSet, normalizedCores);
 
@@ -190,10 +202,10 @@ async function runTravelingAlgorithm(normalizedCores, params) {
   );
 
   // Temporarily rotate the first point of each row for sorting purposes
-  let sortingHelper = rows.map(row => {
+  let sortingHelper = rows.map((row) => {
     return {
       originalRow: row,
-      rotatedPoint: rotatePoint(row[0]["point"], -params.originAngle)
+      rotatedPoint: rotatePoint(row[0]["point"], -params.originAngle),
     };
   });
 
@@ -201,11 +213,34 @@ async function runTravelingAlgorithm(normalizedCores, params) {
   sortingHelper.sort((a, b) => a.rotatedPoint[1] - b.rotatedPoint[1]);
 
   // Extract the original rows in sorted order
-  let sortedRows = sortingHelper.map(item => item.originalRow);
+  let sortedRows = sortingHelper.map((item) => item.originalRow);
 
-  visualizeSortedRows(sortedRows, "visualization", window.preprocessingData.minX, window.preprocessingData.minY);
+  let sortedData = [];
+  sortedRows.forEach((row, rowIndex) => {
+    row.forEach((core, colIndex) => {
+      // Check if the core is an imaginary point
+      let isImaginary = core.isImaginary || false; // Assuming 'isImaginary' is set for imaginary points
+
+      // Add the core or imaginary point to sortedData
+      sortedData.push({
+        x: core.point[0],
+        y: core.point[1],
+        row: rowIndex,
+        col: colIndex,
+        isImaginary: isImaginary,
+      });
+    });
+  });
+
+  window.sortedCoresData = sortedData;
+
+  // visualizeSortedRows(
+  //   sortedRows,
+  //   "visualization",
+  //   window.preprocessingData.minX,
+  //   window.preprocessingData.minY
+  // );
 }
-
 
 // Updated function to accept hyperparameters and cores data
 async function loadDataAndDetermineParams(normalizedCores, params) {
@@ -255,12 +290,13 @@ function saveUpdatedCores() {
     alert("No data available to save.");
     return;
   }
-  
 
   // Download the updated cores data as a JSON file
 
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.finalCores));
-  const downloadAnchorNode = document.createElement('a');
+  const dataStr =
+    "data:text/json;charset=utf-8," +
+    encodeURIComponent(JSON.stringify(window.finalCores));
+  const downloadAnchorNode = document.createElement("a");
   downloadAnchorNode.setAttribute("href", dataStr);
   downloadAnchorNode.setAttribute("download", "updated_cores.json");
   document.body.appendChild(downloadAnchorNode);
@@ -268,17 +304,162 @@ function saveUpdatedCores() {
   downloadAnchorNode.remove();
 }
 
+document
+  .getElementById("saveResults")
+  .addEventListener("click", saveUpdatedCores);
 
-document.getElementById("saveResults").addEventListener("click", saveUpdatedCores);
+document
+  .getElementById("toggle-advanced-settings")
+  .addEventListener("click", function () {
+    var advancedSettings = document.getElementById("advanced-settings");
+    if (advancedSettings.style.display === "none") {
+      advancedSettings.style.display = "block";
+      this.textContent = "Hide Advanced Settings";
+    } else {
+      advancedSettings.style.display = "none";
+      this.textContent = "Show Advanced Settings";
+    }
+  });
 
+// document.getElementById('imageInput').addEventListener('change', handleImageSelect, false);
 
-document.getElementById('toggle-advanced-settings').addEventListener('click', function() {
-  var advancedSettings = document.getElementById('advanced-settings');
-  if (advancedSettings.style.display === 'none') {
-      advancedSettings.style.display = 'block';
-      this.textContent = 'Hide Advanced Settings';
+// function handleImageSelect(event) {
+//   const reader = new FileReader();
+//   reader.onload = function(e) {
+//     const img = new Image();
+//     img.onload = function() {
+//       const canvas = document.getElementById('coreCanvas');
+//       const ctx = canvas.getContext('2d');
+//       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+//       // Additional processing can be added here
+//     };
+//     img.src = e.target.result;
+//   };
+//   reader.readAsDataURL(event.target.files[0]);
+// }
+
+document
+  .getElementById("imageInput")
+  .addEventListener("change", function (event) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const imageSrc = e.target.result;
+
+      // Check if cores data is available before drawing
+      if (window.cores && window.cores.length > 0) {
+        const xOffsetValue = document.getElementById("xOffsetValue");
+        const xOffset = document.getElementById("xOffset");
+        xOffset.value = window.preprocessingData.minX;
+        xOffsetValue.value = window.preprocessingData.minX; // Update the output element with the slider value
+
+        const yOffset = document.getElementById("yOffset");
+        const yOffsetValue = document.getElementById("yOffsetValue");
+        yOffsetValue.value = window.preprocessingData.minY; // Update the output element with the slider value
+        yOffset.value = window.preprocessingData.minY;
+
+        // If there's an image and cores data, draw the cores with the new radius
+        drawCoresOnCanvas(
+          imageSrc,
+          window.cores,
+          window.preprocessingData.minX,
+          window.preprocessingData.minY
+        );
+      } else {
+        alert("Please load the JSON file first.");
+      }
+    };
+    reader.readAsDataURL(event.target.files[0]);
+  });
+document.getElementById("userRadius").addEventListener("input", function () {
+  const radiusValue = document.getElementById("radiusValue");
+  const userRadius = document.getElementById("userRadius").value;
+  radiusValue.value = userRadius; // Update the output element with the slider value
+
+  const imageFile = document.getElementById("imageInput").files[0];
+  if (imageFile && window.cores) {
+    // If there's an image and cores data, draw the cores with the new radius
+    redrawCores();
   } else {
-      advancedSettings.style.display = 'none';
-      this.textContent = 'Show Advanced Settings';
+    alert("Please load an image and JSON file first.");
   }
 });
+
+// Event listener for X Offset Slider
+document.getElementById("xOffset").addEventListener("input", function () {
+  const xOffsetValue = document.getElementById("xOffsetValue");
+  xOffsetValue.value = this.value; // Update the output element with the slider value
+  redrawCores(); // Redraw cores with new offsets
+});
+
+// Event listener for Y Offset Slider
+document.getElementById("yOffset").addEventListener("input", function () {
+  const yOffsetValue = document.getElementById("yOffsetValue");
+  yOffsetValue.value = this.value; // Update the output element with the slider value
+  redrawCores(); // Redraw cores with new offsets
+});
+// Function to redraw the cores on the canvas
+function redrawCores() {
+  const imageFile = document.getElementById("imageInput").files[0];
+  if (imageFile && window.cores) {
+    drawCoresOnCanvas(URL.createObjectURL(imageFile), window.cores);
+  } else {
+    alert("Please load an image and JSON file first.");
+  }
+}
+function drawCoresOnCanvas(imageSrc, coresData) {
+  const img = new Image();
+  img.src = imageSrc;
+
+  img.onload = () => {
+    const canvas = document.getElementById("coreCanvas");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, img.width, img.height);
+
+    const userRadius = parseInt(document.getElementById("userRadius").value);
+    const xOffset = parseInt(document.getElementById("xOffset").value);
+    const yOffset = parseInt(document.getElementById("yOffset").value);
+
+    if (window.sortedCoresData && window.sortedCoresData.length > 0) {
+      // Process sorted data and draw circles with row/col information
+      window.sortedCoresData.forEach((sortedCore) => {
+        ctx.beginPath();
+        ctx.arc(
+          sortedCore.x + xOffset,
+          sortedCore.y + yOffset,
+          userRadius,
+          0,
+          Math.PI * 2
+        );
+        ctx.lineWidth = 2;
+
+        // Check if the core is imaginary and set the color accordingly
+        if (sortedCore.isImaginary) {
+          ctx.strokeStyle = "orange";
+        } else {
+          ctx.strokeStyle = "red";
+        }
+
+        ctx.stroke();
+
+        // Draw row/col information
+        ctx.fillStyle = "blue"; // Text color
+        ctx.font = "10px Arial"; // Text font and size
+        ctx.fillText(
+          `(${sortedCore.row},${sortedCore.col})`,
+          sortedCore.x + xOffset - userRadius + 2,
+          sortedCore.y + yOffset  
+        );
+      });
+    } else {
+      // Draw only red circles for real cores if sorted data is not available
+      coresData.forEach((core) => {
+        ctx.beginPath();
+        ctx.arc(core.x + xOffset, core.y + yOffset, userRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+    }
+  };
+}
