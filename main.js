@@ -25,6 +25,7 @@ function getHyperparametersFromUI() {
   const radiusMultiplier = parseFloat(
     document.getElementById("radiusMultiplier").value
   );
+  
   const minAngle = parseFloat(document.getElementById("minAngle").value);
   const maxAngle = parseFloat(document.getElementById("maxAngle").value);
   const angleStepSize = parseFloat(
@@ -102,7 +103,7 @@ document.getElementById("loadJsonBtn").addEventListener("click", async () => {
   await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
 
   applyAndVisualize();
-  
+
   // Update the URL with the loaded JSON
   window.history.replaceState(
     {},
@@ -240,13 +241,13 @@ async function loadDataAndDetermineParams(normalizedCores, params) {
   document.getElementById("originAngle").value = originAngle.toFixed(2);
   document.getElementById("gridWidth").value = d.toFixed(2);
   document.getElementById("imageWidth").value = imageWidth.toFixed(2);
-  document.getElementById("gamma").value = (0.75 * d).toFixed(2);
+  document.getElementById("gamma").value = (0.9 * d).toFixed(2);
 
   // Update the params object with the new calculations
   params.originAngle = originAngle;
   params.gridWidth = d;
   params.imageWidth = imageWidth;
-  params.gamma = 0.75 * d;
+  params.gamma = 0.9 * d;
 }
 
 function saveUpdatedCores() {

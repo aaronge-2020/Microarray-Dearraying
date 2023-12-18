@@ -62,9 +62,9 @@
                         <input type="number" id="originAngle" name="originAngle" step="1" value="0">
 
                         <label for="thresholdMultiplier"
-                            title="Multiplier for the median absolute deviation to filter edges by length">Length Threshold
+                            title="Multiplier for the median absolute deviation to filter edges by length" style="display: none">Length Threshold
                             Multiplier</label>
-                        <input type="number" id="thresholdMultiplier" name="thresholdMultiplier" step="0.1" value="1.5">
+                        <input type="number" id="thresholdMultiplier" name="thresholdMultiplier" step="0.1" value="1.5" style="display: none">
 
                         <label for="thresholdAngle" title="The angle within which edges are considered valid">Threshold
                             Angle</label>
@@ -72,7 +72,7 @@
                     </fieldset>
 
                     <!-- Image Rotation Section -->
-                    <fieldset>
+                    <fieldset style="display: none">
                         <legend>Image Rotation Parameters</legend>
 
                         <label for="minAngle" title="Minimum angle to test for image rotation">Minimum Angle</label>
@@ -101,8 +101,8 @@
                         <input type="number" id="radiusMultiplier" name="radiusMultiplier" step="0.1" value="0.7">
 
                         <label for="gridWidth"
-                            title="Width of one square in the grid used in the traveling algorithm">Grid Width</label>
-                        <input type="number" id="gridWidth" name="gridWidth" step="1" value="70">
+                            title="Width of one square in the grid used in the traveling algorithm" style="display: none">Grid Width</label>
+                        <input type="number" id="gridWidth" name="gridWidth" step="1" value="70" style="display: none">
 
                         <label for="gamma"
                         title="Distance after the the core with the greatest X value to stop the traveling algorithm">Stopping Distance</label>
@@ -110,17 +110,17 @@
 
 
                         <label for="multiplier"
-                            title="Multiplier for the grid width calculation in the traveling algorithm">Multiplier for
+                            title="Multiplier for the grid width calculation in the traveling algorithm" style="display: none">Multiplier for
                             Grid Width</label>
-                        <input type="number" id="multiplier" name="multiplier" step="0.1" value="1.5">
+                        <input type="number" id="multiplier" name="multiplier" step="0.1" value="1.5" style="display: none">
 
                         <label for="imageWidth"
                             title="Width of the entire gird used in the traveling algorithm">Image Width</label>
                         <input type="number" id="imageWidth" name="imageWidth" step="1" value="1024">
 
                         <label for="searchAngle"
-                            title="Angle to search in the traveling algorithm">Search Angle</label>
-                        <input type="number" id="searchAngle" name="searchAngle" step="1" value="360">
+                            title="Angle to search in the traveling algorithm" style="display: none">Search Angle</label>
+                        <input type="number" id="searchAngle" name="searchAngle" step="1" value="360" style="display: none">
 
                     </fieldset>
 
