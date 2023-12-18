@@ -89,7 +89,7 @@ document
         window.history.replaceState(
           {},
           "",
-          `${window.location.pathname}?json=${imageUrl}`
+          `${window.location.pathname}?image=${imageUrl}`
         );
       };
 
