@@ -76,6 +76,7 @@ async function initFromURL() {
     const jsonData = await loadJSONFromURL(fileURL);
     window.cores = preprocessCores(jsonData);
 
+
     if (jsonData) {
       // Assuming you have a function to setup UI values or something similar
      await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
@@ -101,6 +102,13 @@ document.getElementById("loadJsonBtn").addEventListener("click", async () => {
   await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
 
   applyAndVisualize();
+  
+  // Update the URL with the loaded JSON
+  window.history.replaceState(
+    {},
+    "",
+    `${window.location.pathname}?json=${jsonUrl}`
+  );
 });
 
 function handleFileLoad(event) {

@@ -67,7 +67,6 @@ fileInput.addEventListener("change", async function (e) {
   }
 });
 
-
 // Event listener for the 'Load Image from URL' button
 document
   .getElementById("loadImageUrlBtn")
@@ -85,6 +84,13 @@ document
 
         // Run the pipeline with the new image
         updateVisualization();
+
+        // Update the URL with the loaded JSON
+        window.history.replaceState(
+          {},
+          "",
+          `${window.location.pathname}?json=${imageUrl}`
+        );
       };
 
       // Handle any errors that occur during loading
@@ -131,37 +137,37 @@ document.getElementById("downloadBtn").addEventListener("click", function () {
   URL.revokeObjectURL(url);
 });
 
-
-window.addEventListener('load', function() {
-    // This will be executed after the page is fully loaded
-    const urlParams = new URLSearchParams(window.location.search);
-    const imageUrl = urlParams.get('image');
-    if (imageUrl) {
-      loadImageAndRunPipeline(imageUrl);
-    }
-  });
-  
-  function loadImageAndRunPipeline(imageUrl) {
-    // Create a new Image object
-    const image = new Image();
-    // Set CORS to anonymous to access the image data if CORS headers are set on the image server
-    image.crossOrigin = "anonymous";
-    
-    // Once the image is loaded, run the full pipeline
-    image.onload = async function() {
-      // Assuming originalImageContainer is defined earlier in your code and accessible here
-      originalImageContainer.src = this.src;
-      updateVisualization(); // Make sure this function is defined and does what's expected
-    };
-  
-    // Handle any errors that occur during loading
-    image.onerror = function() {
-      console.error('Failed to load image from URL.');
-      if (document.getElementById('notification')) {
-        document.getElementById('notification').textContent = 'Failed to load image from URL. Please check the URL and try again.';
-      }
-    };
-  
-    // Set the source of the image to the provided URL
-    image.src = imageUrl;
+window.addEventListener("load", function () {
+  // This will be executed after the page is fully loaded
+  const urlParams = new URLSearchParams(window.location.search);
+  const imageUrl = urlParams.get("image");
+  if (imageUrl) {
+    loadImageAndRunPipeline(imageUrl);
   }
+});
+
+function loadImageAndRunPipeline(imageUrl) {
+  // Create a new Image object
+  const image = new Image();
+  // Set CORS to anonymous to access the image data if CORS headers are set on the image server
+  image.crossOrigin = "anonymous";
+
+  // Once the image is loaded, run the full pipeline
+  image.onload = async function () {
+    // Assuming originalImageContainer is defined earlier in your code and accessible here
+    originalImageContainer.src = this.src;
+    updateVisualization(); // Make sure this function is defined and does what's expected
+  };
+
+  // Handle any errors that occur during loading
+  image.onerror = function () {
+    console.error("Failed to load image from URL.");
+    if (document.getElementById("notification")) {
+      document.getElementById("notification").textContent =
+        "Failed to load image from URL. Please check the URL and try again.";
+    }
+  };
+
+  // Set the source of the image to the provided URL
+  image.src = imageUrl;
+}
