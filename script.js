@@ -171,3 +171,4 @@ function loadImageAndRunPipeline(imageUrl) {
   // Set the source of the image to the provided URL
   image.src = imageUrl;
 }
+

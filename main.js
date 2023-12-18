@@ -271,3 +271,14 @@ function saveUpdatedCores() {
 
 document.getElementById("saveResults").addEventListener("click", saveUpdatedCores);
 
+
+document.getElementById('toggle-advanced-settings').addEventListener('click', function() {
+  var advancedSettings = document.getElementById('advanced-settings');
+  if (advancedSettings.style.display === 'none') {
+      advancedSettings.style.display = 'block';
+      this.textContent = 'Hide Advanced Settings';
+  } else {
+      advancedSettings.style.display = 'none';
+      this.textContent = 'Show Advanced Settings';
+  }
+});
