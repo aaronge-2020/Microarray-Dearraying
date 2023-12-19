@@ -49,12 +49,16 @@ nav ul li a:hover {
 }
 
 .sidebar {
-  width: 300px;
-  background-color: #fff;
+  width: 300px; /* Fixed width for consistency */
+  background-color: #ffffff;
   padding: 20px;
-  overflow-y: auto;
-  border-right: 1px solid #dddddd;
+  max-height: 100vh; /* 100% of the viewport height */
+  overflow-y: auto; /* Enables scrolling */
+  position: sticky;
+  top: 0; /* Stick to the top of the viewport */
+  border-right: 1px solid #eaeaea;
 }
+
 
 .content {
   flex-grow: 1;
