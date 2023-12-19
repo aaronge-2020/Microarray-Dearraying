@@ -151,10 +151,158 @@ async function applyAndVisualize() {
         : "path/to/default/image.jpg";
 
     drawCoresOnCanvas(imageSrc, window.cores);
+
+    // Create the virtual grid
+    createVirtualGrid(imageSrc, window.sortedCoresData, 25, 25, 50, 50);
   } else {
     console.error("No cores data available. Please load a file first.");
   }
 }
+
+function createVirtualGrid(imageSrc, sortedCoresData, horizontalSpacing, verticalSpacing, startingX, startingY) {
+  const virtualGridCanvas = document.getElementById('virtualGridCanvas');
+  if (!virtualGridCanvas) {
+    console.error('Virtual grid canvas not found');
+    return;
+  }
+  
+  // Calculate the new canvas size based on the number of rows and columns and spacing
+  const rows = sortedCoresData.reduce((acc, core) => Math.max(acc, core.row), 0) + 1;
+  const cols = sortedCoresData.reduce((acc, core) => Math.max(acc, core.col), 0) + 1;
+  const userRadius = parseInt(document.getElementById("userRadius").value);
+  virtualGridCanvas.width = cols * horizontalSpacing + userRadius * 2; // Add some padding
+  virtualGridCanvas.height = rows * verticalSpacing + userRadius * 2;
+
+  const vctx = virtualGridCanvas.getContext('2d');
+  const img = new Image();
+  img.src = imageSrc;
+
+  img.onload = () => {
+    // Clear the virtual grid before redrawing
+    vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
+
+    sortedCoresData.forEach(core => {
+      const xOffset = parseInt(document.getElementById("xOffset").value);
+      const yOffset = parseInt(document.getElementById("yOffset").value);
+      const idealX = core.col * horizontalSpacing + startingX;
+      const idealY = core.row * verticalSpacing + startingY;
+
+      // Save the context state before clipping
+      vctx.save();
+
+      // Create a path for the circle
+      vctx.beginPath();
+      vctx.arc(idealX, idealY, userRadius, 0, Math.PI * 2, true);
+      vctx.closePath();
+      vctx.clip();
+
+      // Calculate source coordinates taking offsets into account
+      const sourceX = core.x + xOffset - userRadius;
+      const sourceY = core.y + yOffset - userRadius;
+
+      // Draw the cropped core onto the virtual grid canvas
+      vctx.drawImage(
+        img,
+        sourceX, sourceY,
+        userRadius * 2, userRadius * 2,
+        idealX - userRadius, idealY - userRadius,
+        userRadius * 2, userRadius * 2
+      );
+
+      // Restore the context to draw text
+      vctx.restore();
+
+      // Draw row/col text
+      vctx.fillStyle = 'black'; // Text color
+      vctx.font = '12px Arial'; // Text font and size
+      vctx.fillText(`(${core.row},${core.col})`, idealX - userRadius, idealY - userRadius);
+    });
+  };
+
+  img.onerror = () => {
+    console.error('Image failed to load.');
+  };
+}
+
+
+// Add event listeners for range inputs to show the current value
+document.getElementById('horizontalSpacing').addEventListener('input', function() {
+  document.getElementById('horizontalSpacingValue').textContent = this.value;
+});
+
+document.getElementById('verticalSpacing').addEventListener('input', function() {
+  document.getElementById('verticalSpacingValue').textContent = this.value;
+});
+
+// Add event listeners for range inputs to show the current value
+document.getElementById('startingX').addEventListener('input', function() {
+  document.getElementById('startingXValue').textContent = this.value;
+});
+
+document.getElementById('startingY').addEventListener('input', function() {
+  document.getElementById('startingYValue').textContent = this.value;
+});
+
+
+// Event listeners for tab buttons
+document.getElementById("rawDataTabButton").addEventListener("click", function() {
+  showRawDataSidebar();
+  highlightTab(this); // This function will highlight the active tab, it's implementation is shown below
+});
+
+document.getElementById("virtualGridTabButton").addEventListener("click", function() {
+  showVirtualGridSidebar();
+  highlightTab(this); // This function will highlight the active tab, it's implementation is shown below
+});
+
+// Function to highlight the active tab
+function highlightTab(activeTab) {
+  // Remove active class from all tabs
+  document.querySelectorAll('.tablinks').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  // Add active class to the clicked tab
+  activeTab.classList.add('active');
+}
+
+// Function to show raw data sidebar
+function showRawDataSidebar() {
+  document.getElementById("rawDataSidebar").style.display = 'block';
+  document.getElementById("virtualGridSidebar").style.display = 'none';
+}
+
+// Function to show virtual grid sidebar
+function showVirtualGridSidebar() {
+  document.getElementById("rawDataSidebar").style.display = 'none';
+  document.getElementById("virtualGridSidebar").style.display = 'block';
+}
+
+
+// JavaScript to handle the virtual grid sidebar hyperparameters and update the grid
+document.getElementById('applyVirtualGridSettings').addEventListener('click', function() {
+  const horizontalSpacing = parseInt(document.getElementById('horizontalSpacing').value, 10);
+  const verticalSpacing = parseInt(document.getElementById('verticalSpacing').value, 10);
+  const startingX = parseInt(document.getElementById('startingX').value, 10);
+  const startingY = parseInt(document.getElementById('startingY').value, 10);
+
+  // Update the virtual grid with the new spacing values
+  updateVirtualGridSpacing(horizontalSpacing, verticalSpacing, startingX, startingY);
+});
+
+function updateVirtualGridSpacing(horizontalSpacing, verticalSpacing, startingX, startingY) {
+  const virtualGridCanvas = document.getElementById('virtualGridCanvas');
+  const vctx = virtualGridCanvas.getContext('2d');
+  const imageSrc = document.getElementById('imageInput').files[0] 
+                   ? URL.createObjectURL(document.getElementById('imageInput').files[0]) 
+                   : 'path/to/default/image.jpg'; // Handle the default image source appropriately
+  
+  // Clear the existing grid
+  vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
+  
+  // Redraw the grid with new spacings
+  createVirtualGrid(imageSrc, window.sortedCoresData, horizontalSpacing, verticalSpacing, startingX, startingY);
+}
+
 
 function rotatePoint(point, angle) {
   const x = point[0];
@@ -448,7 +596,7 @@ function drawCoresOnCanvas(imageSrc, coresData) {
         ctx.fillText(
           `(${sortedCore.row},${sortedCore.col})`,
           sortedCore.x + xOffset - userRadius + 2,
-          sortedCore.y + yOffset  
+          sortedCore.y + yOffset
         );
       });
     } else {

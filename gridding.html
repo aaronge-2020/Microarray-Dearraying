@@ -24,7 +24,7 @@
     </header>
 
     <div class="app-container">
-        <div class="sidebar">
+        <div class="sidebar" id="rawDataSidebar">
             <!-- Form for hyperparameters -->
             <form id="hyperparameters-form">
                 <!-- File input section -->
@@ -67,9 +67,7 @@
 
                 <div class="hyperparameters">
 
-
-
-                <!-- Hyperparameter form section -->
+                    <!-- Hyperparameter form section -->
                     <h2>Hyperparameter Configuration</h2>
 
                     <!-- Image Parameters Section -->
@@ -185,15 +183,83 @@
             </form>
 
         </div>
+
+        <!-- Additional sidebar for Virtual Grid adjustments -->
+        <div class="sidebar" id="virtualGridSidebar" style="display: none;">
+            <h2>Virtual Grid Configuration</h2>
+            <div class="hyperparameters">
+                <fieldset>
+                    <legend>Grid Spacing Parameters</legend>
+                    <label for="horizontalSpacing">Horizontal Spacing:</label>
+                    <input type="range" id="horizontalSpacing" name="horizontalSpacing" min="1" max="100" value="20">
+                    <output id="horizontalSpacingValue" for="horizontalSpacing">20</output>
+
+                    <label for="verticalSpacing">Vertical Spacing:</label>
+                    <input type="range" id="verticalSpacing" name="verticalSpacing" min="1" max="100" value="20">
+                    <output id="verticalSpacingValue" for="verticalSpacing">20</output>
+
+                    <label for="startingX">Starting X:</label>
+                    <input type="range" id="startingX" name="startingX" min="1" max="100" value="20">
+                    <output id="startingXValue" for="startingX">20</output>
+
+                    <label for="startingY">Starting Y:</label>
+                    <input type="range" id="startingY" name="startingY" min="1" max="100" value="20">
+                    <output id="startingYValue" for="startingY">20</output>
+
+                </fieldset>
+                <button type="button" id="applyVirtualGridSettings">Apply Grid Settings</button>
+            </div>
+        </div>
+
         <div class="content" style="width: 100%; height: 100%">
-            <!-- Existing carousel for visualizations -->
-            <div id="visualization-carousel" class="carousel" style="width: 100%; height: 100%; display: none;">
-                <div id="visualization" style="width: 100%; height: 100%"></div>
+
+            <!-- Tab Links -->
+            <div class="tab">
+                <button class="tablinks" onclick="openTab(event, 'RawData')" id="rawDataTabButton">Raw Data</button>
+                <button class="tablinks" onclick="openTab(event, 'VirtualGrid')" id="virtualGridTabButton">Virtual
+                    Grid</button>
             </div>
 
-            <!-- Canvas for displaying and interacting with the image -->
-            <canvas id="coreCanvas" width="1024" height="1024" style="border:1px solid #000000;"></canvas>
+
+            <!-- Tab content -->
+            <div id="RawData" class="tabcontent">
+                <canvas id="coreCanvas" width="1024" height="1024" style="border:1px solid #000000;"></canvas>
+                <!-- Put other raw data related content here -->
+            </div>
+
+            <div id="VirtualGrid" class="tabcontent">
+                <canvas id="virtualGridCanvas" width="1024" height="1024" style="border:1px solid #000000;"></canvas>
+                <!-- Put other virtual grid related content here -->
+            </div>
+
         </div>
+        <script>
+            // Call this function to open the default tab
+            function openDefaultTab() {
+                // Get the element with id="defaultOpen" and click on it
+                document.getElementById("rawDataTabButton").click();
+            }
+
+            // The openTab function as before
+            function openTab(evt, tabName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }
+
+            // When the window loads, open the default tab
+            window.onload = openDefaultTab;
+
+
+        </script>
 
 
     </div>
