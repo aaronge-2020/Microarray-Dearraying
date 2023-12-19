@@ -640,9 +640,9 @@ function resetApplication() {
   window.sortedCoresData = [];
 
   // Update the UI if necessary
-  document.getElementById('jsonUrlInput').value = '';
+  document.getElementById('jsonUrlInput').value = 'https://raw.githubusercontent.com/aaronge-2020/Microarray-Dearraying/main/TMA_WSI_Labels_updated/158871.json';
   document.getElementById('imageInput').value = '';
-  document.getElementById('imgUrlInput').value = '';
+  document.getElementById('imgUrlInput').value = 'https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png';
 
   // Reset sliders and output elements to their default values
   resetSlidersAndOutputs();

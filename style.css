@@ -123,6 +123,15 @@ button:hover {
   border: 1px solid #ddd;
 }
 
+#imgUrlInput {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+
 /* Adjusting styling for file input label */
 .file-input-label {
   display: block;
@@ -261,7 +270,7 @@ button:hover {
 .tab {
   overflow: hidden;
   border: 1px solid #ccc; /* Adjust the color to match your scheme */
-  background-color: #f0f0f0; /* Adjust the color to match your scheme */
+  background-color: #353434; /* Adjust the color to match your scheme */
 }
 
 /* Style the buttons inside the tab */
@@ -278,12 +287,12 @@ button:hover {
 
 /* Change background color of buttons on hover */
 .tab button:hover {
-  background-color: #ddd; /* Adjust the color to match your scheme */
+  background-color: #4c4a4a; /* Adjust the color to match your scheme */
 }
 
 /* Create an active/current tablink class */
 .tab button.active {
-  background-color: #ccc; /* Adjust the color to match your scheme */
+  background-color: #696868; /* Adjust the color to match your scheme */
 }
 
 /* Style the tab content */
