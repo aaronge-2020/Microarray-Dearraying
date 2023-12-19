@@ -107,19 +107,59 @@ document.getElementById("loadJsonBtn").addEventListener("click", async () => {
   window.cores = preprocessCores(jsonData);
   await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
 
-  applyAndVisualize();
-
   // Update the URL with the loaded JSON
-  window.history.replaceState(
-    {},
-    "",
-    `${window.location.pathname}?json=${jsonUrl}`
-  );
+  // window.history.replaceState(
+  //   {},
+  //   "",
+  //   `${window.location.pathname}?json=${jsonUrl}`
+  // );
+});
+
+// Updated function to load an image from a URL
+document.getElementById("loadImgBtn").addEventListener("click", async () => {
+  const imgUrl = document.getElementById("imgUrlInput").value;
+  if (!imgUrl) {
+    console.error("No image URL provided.");
+    return;
+  }
+
+  const image = new Image();
+  image.src = imgUrl;
+  image.onload = async () => {
+    // Save the loaded image globally
+    window.loadedImg = image;
+
+    if (window.cores && window.cores.length > 0) {
+      const xOffsetValue = document.getElementById("xOffsetValue");
+      const xOffset = document.getElementById("xOffset");
+      xOffset.value = window.preprocessingData.minX;
+      xOffsetValue.value = window.preprocessingData.minX; // Update the output element with the slider value
+
+      const yOffset = document.getElementById("yOffset");
+      const yOffsetValue = document.getElementById("yOffsetValue");
+      yOffsetValue.value = window.preprocessingData.minY; // Update the output element with the slider value
+      yOffset.value = window.preprocessingData.minY;
+
+      // If there's an image and cores data, draw the cores with the new radius
+      drawCoresOnCanvas(
+        imgUrl,
+        window.cores,
+        window.preprocessingData.minX,
+        window.preprocessingData.minY
+      );
+    } else {
+      alert("Please load the JSON file first.");
+    }
+  };
+
+  image.onerror = () => {
+    console.error("Image failed to load from the provided URL.");
+  };
 });
 
 function handleFileLoad(event) {
   try {
-    // Parse the uploaded file and preprocess the cores
+    // Parse the uploaded file and preprocess the coresf
     window.cores = preprocessCores(JSON.parse(event.target.result));
 
     loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
@@ -130,7 +170,6 @@ function handleFileLoad(event) {
 
 function handleFileSelect(event) {
   resetApplication();
-
 
   const reader = new FileReader();
   reader.onload = handleFileLoad; // Set the event handler for when the file is read
@@ -146,54 +185,76 @@ document
   .getElementById("apply-hyperparameters")
   .addEventListener("click", applyAndVisualize);
 
+// Updated applyAndVisualize function
 async function applyAndVisualize() {
-  // Collect hyperparameter values from the UI
-
   if (window.cores) {
-    // Process and visualize with new hyperparameters
     await runTravelingAlgorithm(window.cores, getHyperparametersFromUI());
-    const imageSrc =
-      document.getElementById("imageInput").files.length > 0
-        ? URL.createObjectURL(document.getElementById("imageInput").files[0])
-        : "path/to/default/image.jpg";
+
+    // Use the loaded image if available, otherwise use default or file input image
+    const imageSrc = window.loadedImg
+      ? window.loadedImg.src
+      : document.getElementById("imageInput").files.length > 0
+      ? URL.createObjectURL(document.getElementById("imageInput").files[0])
+      : "path/to/default/image.jpg";
 
     drawCoresOnCanvas(imageSrc, window.cores);
 
+    const horizontalSpacing = parseInt(
+      document.getElementById("horizontalSpacing").value,
+      10
+    );
+    const verticalSpacing = parseInt(
+      document.getElementById("verticalSpacing").value,
+      10
+    );
+    const startingX = parseInt(document.getElementById("startingX").value, 10);
+    const startingY = parseInt(document.getElementById("startingY").value, 10);
 
-    const horizontalSpacing = parseInt(document.getElementById('horizontalSpacing').value, 10);
-    const verticalSpacing = parseInt(document.getElementById('verticalSpacing').value, 10);
-    const startingX = parseInt(document.getElementById('startingX').value, 10);
-    const startingY = parseInt(document.getElementById('startingY').value, 10);
-  
-    
-    // Create the virtual grid
-    createVirtualGrid(imageSrc, window.sortedCoresData, horizontalSpacing, verticalSpacing, startingX, startingY);
+    createVirtualGrid(
+      imageSrc,
+      window.sortedCoresData,
+      horizontalSpacing,
+      verticalSpacing,
+      startingX,
+      startingY
+    );
   } else {
     console.error("No cores data available. Please load a file first.");
   }
 }
 
-function createVirtualGrid(imageSrc, sortedCoresData, horizontalSpacing, verticalSpacing, startingX, startingY) {
-  const virtualGridCanvas = document.getElementById('virtualGridCanvas');
+function createVirtualGrid(
+  imageSrc,
+  sortedCoresData,
+  horizontalSpacing,
+  verticalSpacing,
+  startingX,
+  startingY
+) {
+  const virtualGridCanvas = document.getElementById("virtualGridCanvas");
   if (!virtualGridCanvas) {
-    console.error('Virtual grid canvas not found');
+    console.error("Virtual grid canvas not found");
     return;
   }
-  
-  const rows = sortedCoresData.reduce((acc, core) => Math.max(acc, core.row), 0) + 1;
-  const cols = sortedCoresData.reduce((acc, core) => Math.max(acc, core.col), 0) + 1;
-  const userRadius = parseInt(document.getElementById("userRadius").value);
-  virtualGridCanvas.width = cols * horizontalSpacing + userRadius * 2 + startingX;
-  virtualGridCanvas.height = rows * verticalSpacing + userRadius * 2 + startingY;
 
-  const vctx = virtualGridCanvas.getContext('2d');
+  const rows =
+    sortedCoresData.reduce((acc, core) => Math.max(acc, core.row), 0) + 1;
+  const cols =
+    sortedCoresData.reduce((acc, core) => Math.max(acc, core.col), 0) + 1;
+  const userRadius = parseInt(document.getElementById("userRadius").value);
+  virtualGridCanvas.width =
+    cols * horizontalSpacing + userRadius * 2 + startingX;
+  virtualGridCanvas.height =
+    rows * verticalSpacing + userRadius * 2 + startingY;
+
+  const vctx = virtualGridCanvas.getContext("2d");
   const img = new Image();
   img.src = imageSrc;
 
   img.onload = () => {
     vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
 
-    sortedCoresData.forEach(core => {
+    sortedCoresData.forEach((core) => {
       const xOffset = parseInt(document.getElementById("xOffset").value);
       const yOffset = parseInt(document.getElementById("yOffset").value);
       const idealX = startingX + core.col * horizontalSpacing;
@@ -205,7 +266,7 @@ function createVirtualGrid(imageSrc, sortedCoresData, horizontalSpacing, vertica
       vctx.closePath();
 
       // Use the isImaginary flag to determine the stroke style
-      vctx.strokeStyle = core.isImaginary ? 'red' : 'green';
+      vctx.strokeStyle = core.isImaginary ? "red" : "green";
       vctx.lineWidth = 2; // Adjust line width as needed
       vctx.stroke();
 
@@ -216,104 +277,144 @@ function createVirtualGrid(imageSrc, sortedCoresData, horizontalSpacing, vertica
 
       vctx.drawImage(
         img,
-        sourceX, sourceY,
-        userRadius * 2, userRadius * 2,
-        idealX - userRadius, idealY - userRadius,
-        userRadius * 2, userRadius * 2
+        sourceX,
+        sourceY,
+        userRadius * 2,
+        userRadius * 2,
+        idealX - userRadius,
+        idealY - userRadius,
+        userRadius * 2,
+        userRadius * 2
       );
 
       vctx.restore();
 
-      vctx.fillStyle = 'black'; // Text color
-      vctx.font = '12px Arial'; // Text font and size
-      vctx.fillText(`(${core.row},${core.col})`, idealX - userRadius / 2, idealY - userRadius / 2);
+      vctx.fillStyle = "black"; // Text color
+      vctx.font = "12px Arial"; // Text font and size
+      vctx.fillText(
+        `(${core.row},${core.col})`,
+        idealX - userRadius / 2,
+        idealY - userRadius / 2
+      );
     });
   };
 
   img.onerror = () => {
-    console.error('Image failed to load.');
+    console.error("Image failed to load.");
   };
 }
 
+// Add event listeners for range inputs to show the current value
+document
+  .getElementById("horizontalSpacing")
+  .addEventListener("input", function () {
+    document.getElementById("horizontalSpacingValue").textContent = this.value;
+  });
+
+document
+  .getElementById("verticalSpacing")
+  .addEventListener("input", function () {
+    document.getElementById("verticalSpacingValue").textContent = this.value;
+  });
 
 // Add event listeners for range inputs to show the current value
-document.getElementById('horizontalSpacing').addEventListener('input', function() {
-  document.getElementById('horizontalSpacingValue').textContent = this.value;
+document.getElementById("startingX").addEventListener("input", function () {
+  document.getElementById("startingXValue").textContent = this.value;
 });
 
-document.getElementById('verticalSpacing').addEventListener('input', function() {
-  document.getElementById('verticalSpacingValue').textContent = this.value;
+document.getElementById("startingY").addEventListener("input", function () {
+  document.getElementById("startingYValue").textContent = this.value;
 });
-
-// Add event listeners for range inputs to show the current value
-document.getElementById('startingX').addEventListener('input', function() {
-  document.getElementById('startingXValue').textContent = this.value;
-});
-
-document.getElementById('startingY').addEventListener('input', function() {
-  document.getElementById('startingYValue').textContent = this.value;
-});
-
 
 // Event listeners for tab buttons
-document.getElementById("rawDataTabButton").addEventListener("click", function() {
-  showRawDataSidebar();
-  highlightTab(this); // This function will highlight the active tab, it's implementation is shown below
-});
+document
+  .getElementById("rawDataTabButton")
+  .addEventListener("click", function () {
+    showRawDataSidebar();
+    highlightTab(this); // This function will highlight the active tab, it's implementation is shown below
+  });
 
-document.getElementById("virtualGridTabButton").addEventListener("click", function() {
-  showVirtualGridSidebar();
-  highlightTab(this); // This function will highlight the active tab, it's implementation is shown below
-});
+document
+  .getElementById("virtualGridTabButton")
+  .addEventListener("click", function () {
+    showVirtualGridSidebar();
+    highlightTab(this); // This function will highlight the active tab, it's implementation is shown below
+  });
 
 // Function to highlight the active tab
 function highlightTab(activeTab) {
   // Remove active class from all tabs
-  document.querySelectorAll('.tablinks').forEach(tab => {
-    tab.classList.remove('active');
+  document.querySelectorAll(".tablinks").forEach((tab) => {
+    tab.classList.remove("active");
   });
   // Add active class to the clicked tab
-  activeTab.classList.add('active');
+  activeTab.classList.add("active");
 }
 
 // Function to show raw data sidebar
 function showRawDataSidebar() {
-  document.getElementById("rawDataSidebar").style.display = 'block';
-  document.getElementById("virtualGridSidebar").style.display = 'none';
+  document.getElementById("rawDataSidebar").style.display = "block";
+  document.getElementById("virtualGridSidebar").style.display = "none";
 }
 
 // Function to show virtual grid sidebar
 function showVirtualGridSidebar() {
-  document.getElementById("rawDataSidebar").style.display = 'none';
-  document.getElementById("virtualGridSidebar").style.display = 'block';
+  document.getElementById("rawDataSidebar").style.display = "none";
+  document.getElementById("virtualGridSidebar").style.display = "block";
 }
-
 
 // JavaScript to handle the virtual grid sidebar hyperparameters and update the grid
-document.getElementById('applyVirtualGridSettings').addEventListener('click', function() {
-  const horizontalSpacing = parseInt(document.getElementById('horizontalSpacing').value, 10);
-  const verticalSpacing = parseInt(document.getElementById('verticalSpacing').value, 10);
-  const startingX = parseInt(document.getElementById('startingX').value, 10);
-  const startingY = parseInt(document.getElementById('startingY').value, 10);
+document
+  .getElementById("applyVirtualGridSettings")
+  .addEventListener("click", function () {
+    const horizontalSpacing = parseInt(
+      document.getElementById("horizontalSpacing").value,
+      10
+    );
+    const verticalSpacing = parseInt(
+      document.getElementById("verticalSpacing").value,
+      10
+    );
+    const startingX = parseInt(document.getElementById("startingX").value, 10);
+    const startingY = parseInt(document.getElementById("startingY").value, 10);
 
-  // Update the virtual grid with the new spacing values
-  updateVirtualGridSpacing(horizontalSpacing, verticalSpacing, startingX, startingY);
-});
+    // Update the virtual grid with the new spacing values
+    updateVirtualGridSpacing(
+      horizontalSpacing,
+      verticalSpacing,
+      startingX,
+      startingY
+    );
+  });
 
-function updateVirtualGridSpacing(horizontalSpacing, verticalSpacing, startingX, startingY) {
-  const virtualGridCanvas = document.getElementById('virtualGridCanvas');
-  const vctx = virtualGridCanvas.getContext('2d');
-  const imageSrc = document.getElementById('imageInput').files[0] 
-                   ? URL.createObjectURL(document.getElementById('imageInput').files[0]) 
-                   : 'path/to/default/image.jpg'; // Handle the default image source appropriately
-  
+function updateVirtualGridSpacing(
+  horizontalSpacing,
+  verticalSpacing,
+  startingX,
+  startingY
+) {
+  const virtualGridCanvas = document.getElementById("virtualGridCanvas");
+  const vctx = virtualGridCanvas.getContext("2d");
+  // Use the loaded image if available, otherwise use default or file input image
+  const imageSrc = window.loadedImg
+    ? window.loadedImg.src
+    : document.getElementById("imageInput").files.length > 0
+    ? URL.createObjectURL(document.getElementById("imageInput").files[0])
+    : "path/to/default/image.jpg";
+
   // Clear the existing grid
   vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
-  
-  // Redraw the grid with new spacings
-  createVirtualGrid(imageSrc, window.sortedCoresData, horizontalSpacing, verticalSpacing, startingX, startingY);
-}
 
+  // Redraw the grid with new spacings
+  createVirtualGrid(
+    imageSrc,
+    window.sortedCoresData,
+    horizontalSpacing,
+    verticalSpacing,
+    startingX,
+    startingY
+  );
+}
 
 function rotatePoint(point, angle) {
   const x = point[0];
@@ -404,7 +505,6 @@ async function runTravelingAlgorithm(normalizedCores, params) {
       isImaginary: core.isImaginary,
     };
   });
-
 }
 
 // Updated function to accept hyperparameters and cores data
@@ -506,7 +606,6 @@ document
 document
   .getElementById("imageInput")
   .addEventListener("change", function (event) {
-
     const reader = new FileReader();
     reader.onload = function (e) {
       const imageSrc = e.target.result;
@@ -542,7 +641,7 @@ document.getElementById("userRadius").addEventListener("input", function () {
   radiusValue.value = userRadius; // Update the output element with the slider value
 
   const imageFile = document.getElementById("imageInput").files[0];
-  if (imageFile && window.cores) {
+  if ((imageFile || window.loadedImg) && window.cores) {
     // If there's an image and cores data, draw the cores with the new radius
     redrawCores();
   } else {
@@ -566,8 +665,12 @@ document.getElementById("yOffset").addEventListener("input", function () {
 // Function to redraw the cores on the canvas
 function redrawCores() {
   const imageFile = document.getElementById("imageInput").files[0];
-  if (imageFile && window.cores) {
-    drawCoresOnCanvas(URL.createObjectURL(imageFile), window.cores);
+  if ((imageFile || window.loadedImg) && window.cores) {
+    if (window.loadedImg) {
+      drawCoresOnCanvas(window.loadedImg.src, window.cores);
+    } else {
+      drawCoresOnCanvas(URL.createObjectURL(imageFile), window.cores);
+    }
   } else {
     alert("Please load an image and JSON file first.");
   }
@@ -632,24 +735,33 @@ function drawCoresOnCanvas(imageSrc, coresData) {
 
 function resetApplication() {
   // Clear the canvases
-  const coreCanvas = document.getElementById('coreCanvas');
-  const virtualGridCanvas = document.getElementById('virtualGridCanvas');
+  const coreCanvas = document.getElementById("coreCanvas");
+  const virtualGridCanvas = document.getElementById("virtualGridCanvas");
   if (coreCanvas && virtualGridCanvas) {
-    const coreCtx = coreCanvas.getContext('2d');
-    const virtualCtx = virtualGridCanvas.getContext('2d');
+    const coreCtx = coreCanvas.getContext("2d");
+    const virtualCtx = virtualGridCanvas.getContext("2d");
     coreCtx.clearRect(0, 0, coreCanvas.width, coreCanvas.height);
-    virtualCtx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
+    virtualCtx.clearRect(
+      0,
+      0,
+      virtualGridCanvas.width,
+      virtualGridCanvas.height
+    );
   }
 
   // Reset the data structures that hold the core data
   window.cores = [];
   window.sortedCoresData = [];
   window.finalCores = [];
+  window.loadedImg = null;
+  window.preprocessingData = null;
 
   // Update the UI if necessary
-  document.getElementById('jsonUrlInput').value = 'https://raw.githubusercontent.com/aaronge-2020/Microarray-Dearraying/main/TMA_WSI_Labels_updated/158871.json';
-  document.getElementById('imageInput').value = '';
-  document.getElementById('imgUrlInput').value = 'https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png';
+  document.getElementById("jsonUrlInput").value =
+    "https://raw.githubusercontent.com/aaronge-2020/Microarray-Dearraying/main/TMA_WSI_Labels_updated/158871.json";
+  document.getElementById("imageInput").value = "";
+  document.getElementById("imgUrlInput").value =
+    "https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png";
 
   // Reset sliders and output elements to their default values
   resetSlidersAndOutputs();
@@ -657,56 +769,56 @@ function resetApplication() {
 
 function resetSlidersAndOutputs() {
   // Reset Image Parameters
-  document.getElementById('userRadius').value = 20;
-  document.getElementById('radiusValue').textContent = '20';
-  
-  document.getElementById('xOffset').value = 0;
-  document.getElementById('xOffsetValue').textContent = '0';
-  
-  document.getElementById('yOffset').value = 0;
-  document.getElementById('yOffsetValue').textContent = '0';
-  
+  document.getElementById("userRadius").value = 20;
+  document.getElementById("radiusValue").textContent = "20";
+
+  document.getElementById("xOffset").value = 0;
+  document.getElementById("xOffsetValue").textContent = "0";
+
+  document.getElementById("yOffset").value = 0;
+  document.getElementById("yOffsetValue").textContent = "0";
+
   // Reset Traveling Algorithm Parameters
-  document.getElementById('originAngle').value = 0;
-  
-  document.getElementById('radiusMultiplier').value = 0.7;
-  
+  document.getElementById("originAngle").value = 0;
+
+  document.getElementById("radiusMultiplier").value = 0.7;
+
   // Assuming the gridWidth is used elsewhere and should be reset to its default
-  document.getElementById('gridWidth').value = 70;
-  
-  document.getElementById('gamma').value = 60;
-  
-  document.getElementById('multiplier').value = 1.5;
-  
-  document.getElementById('imageWidth').value = 1024;
-  
+  document.getElementById("gridWidth").value = 70;
+
+  document.getElementById("gamma").value = 60;
+
+  document.getElementById("multiplier").value = 1.5;
+
+  document.getElementById("imageWidth").value = 1024;
+
   // Assuming the searchAngle is used elsewhere and should be reset to its default
-  document.getElementById('searchAngle').value = 360;
+  document.getElementById("searchAngle").value = 360;
 
   // Reset Edge Detection Parameters
-  document.getElementById('thresholdMultiplier').value = 1.5;
-  
-  document.getElementById('thresholdAngle').value = 10;
-  
+  document.getElementById("thresholdMultiplier").value = 1.5;
+
+  document.getElementById("thresholdAngle").value = 10;
+
   // Reset Image Rotation Parameters
-  document.getElementById('minAngle').value = 0;
-  
-  document.getElementById('maxAngle').value = 360;
-  
-  document.getElementById('angleStepSize').value = 5;
-  
-  document.getElementById('angleThreshold').value = 20;
+  document.getElementById("minAngle").value = 0;
+
+  document.getElementById("maxAngle").value = 360;
+
+  document.getElementById("angleStepSize").value = 5;
+
+  document.getElementById("angleThreshold").value = 20;
 
   // Reset Virtual Grid Configuration
-  document.getElementById('horizontalSpacing').value = 50;
-  document.getElementById('horizontalSpacingValue').textContent = '50';
-  
-  document.getElementById('verticalSpacing').value = 50;
-  document.getElementById('verticalSpacingValue').textContent = '50';
+  document.getElementById("horizontalSpacing").value = 50;
+  document.getElementById("horizontalSpacingValue").textContent = "50";
 
-  document.getElementById('startingX').value = 50;
-  document.getElementById('startingXValue').textContent = '50';
+  document.getElementById("verticalSpacing").value = 50;
+  document.getElementById("verticalSpacingValue").textContent = "50";
 
-  document.getElementById('startingY').value = 50;
-  document.getElementById('startingYValue').textContent = '50';
+  document.getElementById("startingX").value = 50;
+  document.getElementById("startingXValue").textContent = "50";
+
+  document.getElementById("startingY").value = 50;
+  document.getElementById("startingYValue").textContent = "50";
 }
