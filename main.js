@@ -393,12 +393,18 @@ async function runTravelingAlgorithm(normalizedCores, params) {
 
   window.sortedCoresData = sortedData;
 
-  // visualizeSortedRows(
-  //   sortedRows,
-  //   "visualization",
-  //   window.preprocessingData.minX,
-  //   window.preprocessingData.minY
-  // );
+  // Set the window.finalCores to be the sortedData + the window.preprocessingData.minX /minY
+
+  window.finalCores = sortedData.map((core) => {
+    return {
+      x: core.x + window.preprocessingData.minX,
+      y: core.y + window.preprocessingData.minY,
+      row: core.row,
+      col: core.col,
+      isImaginary: core.isImaginary,
+    };
+  });
+
 }
 
 // Updated function to accept hyperparameters and cores data
@@ -638,6 +644,7 @@ function resetApplication() {
   // Reset the data structures that hold the core data
   window.cores = [];
   window.sortedCoresData = [];
+  window.finalCores = [];
 
   // Update the UI if necessary
   document.getElementById('jsonUrlInput').value = 'https://raw.githubusercontent.com/aaronge-2020/Microarray-Dearraying/main/TMA_WSI_Labels_updated/158871.json';
