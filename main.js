@@ -69,6 +69,8 @@ async function loadJSONFromURL(url) {
 
 // Function to initiate the pipeline with data from the URL
 async function initFromURL() {
+  resetApplication();
+
   const urlParams = new URLSearchParams(window.location.search);
   const fileURL = urlParams.get("json"); // Assuming the URL parameter is named 'json'
 
@@ -92,6 +94,8 @@ async function initFromURL() {
 window.addEventListener("load", initFromURL);
 
 document.getElementById("loadJsonBtn").addEventListener("click", async () => {
+  resetApplication();
+
   const jsonUrl = document.getElementById("jsonUrlInput").value;
   let jsonData = null;
   try {
@@ -125,6 +129,9 @@ function handleFileLoad(event) {
 }
 
 function handleFileSelect(event) {
+  resetApplication();
+
+
   const reader = new FileReader();
   reader.onload = handleFileLoad; // Set the event handler for when the file is read
   reader.readAsText(event.target.files[0]); // Read the selected file as text
@@ -152,8 +159,15 @@ async function applyAndVisualize() {
 
     drawCoresOnCanvas(imageSrc, window.cores);
 
+
+    const horizontalSpacing = parseInt(document.getElementById('horizontalSpacing').value, 10);
+    const verticalSpacing = parseInt(document.getElementById('verticalSpacing').value, 10);
+    const startingX = parseInt(document.getElementById('startingX').value, 10);
+    const startingY = parseInt(document.getElementById('startingY').value, 10);
+  
+    
     // Create the virtual grid
-    createVirtualGrid(imageSrc, window.sortedCoresData, 25, 25, 50, 50);
+    createVirtualGrid(imageSrc, window.sortedCoresData, horizontalSpacing, verticalSpacing, startingX, startingY);
   } else {
     console.error("No cores data available. Please load a file first.");
   }
@@ -166,41 +180,40 @@ function createVirtualGrid(imageSrc, sortedCoresData, horizontalSpacing, vertica
     return;
   }
   
-  // Calculate the new canvas size based on the number of rows and columns and spacing
   const rows = sortedCoresData.reduce((acc, core) => Math.max(acc, core.row), 0) + 1;
   const cols = sortedCoresData.reduce((acc, core) => Math.max(acc, core.col), 0) + 1;
   const userRadius = parseInt(document.getElementById("userRadius").value);
-  virtualGridCanvas.width = cols * horizontalSpacing + userRadius * 2; // Add some padding
-  virtualGridCanvas.height = rows * verticalSpacing + userRadius * 2;
+  virtualGridCanvas.width = cols * horizontalSpacing + userRadius * 2 + startingX;
+  virtualGridCanvas.height = rows * verticalSpacing + userRadius * 2 + startingY;
 
   const vctx = virtualGridCanvas.getContext('2d');
   const img = new Image();
   img.src = imageSrc;
 
   img.onload = () => {
-    // Clear the virtual grid before redrawing
     vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
 
     sortedCoresData.forEach(core => {
       const xOffset = parseInt(document.getElementById("xOffset").value);
       const yOffset = parseInt(document.getElementById("yOffset").value);
-      const idealX = core.col * horizontalSpacing + startingX;
-      const idealY = core.row * verticalSpacing + startingY;
+      const idealX = startingX + core.col * horizontalSpacing;
+      const idealY = startingY + core.row * verticalSpacing;
 
-      // Save the context state before clipping
       vctx.save();
-
-      // Create a path for the circle
       vctx.beginPath();
       vctx.arc(idealX, idealY, userRadius, 0, Math.PI * 2, true);
       vctx.closePath();
+
+      // Use the isImaginary flag to determine the stroke style
+      vctx.strokeStyle = core.isImaginary ? 'red' : 'green';
+      vctx.lineWidth = 2; // Adjust line width as needed
+      vctx.stroke();
+
       vctx.clip();
 
-      // Calculate source coordinates taking offsets into account
       const sourceX = core.x + xOffset - userRadius;
       const sourceY = core.y + yOffset - userRadius;
 
-      // Draw the cropped core onto the virtual grid canvas
       vctx.drawImage(
         img,
         sourceX, sourceY,
@@ -209,13 +222,11 @@ function createVirtualGrid(imageSrc, sortedCoresData, horizontalSpacing, vertica
         userRadius * 2, userRadius * 2
       );
 
-      // Restore the context to draw text
       vctx.restore();
 
-      // Draw row/col text
       vctx.fillStyle = 'black'; // Text color
       vctx.font = '12px Arial'; // Text font and size
-      vctx.fillText(`(${core.row},${core.col})`, idealX - userRadius, idealY - userRadius);
+      vctx.fillText(`(${core.row},${core.col})`, idealX - userRadius / 2, idealY - userRadius / 2);
     });
   };
 
@@ -489,6 +500,7 @@ document
 document
   .getElementById("imageInput")
   .addEventListener("change", function (event) {
+
     const reader = new FileReader();
     reader.onload = function (e) {
       const imageSrc = e.target.result;
@@ -610,4 +622,84 @@ function drawCoresOnCanvas(imageSrc, coresData) {
       });
     }
   };
+}
+
+function resetApplication() {
+  // Clear the canvases
+  const coreCanvas = document.getElementById('coreCanvas');
+  const virtualGridCanvas = document.getElementById('virtualGridCanvas');
+  if (coreCanvas && virtualGridCanvas) {
+    const coreCtx = coreCanvas.getContext('2d');
+    const virtualCtx = virtualGridCanvas.getContext('2d');
+    coreCtx.clearRect(0, 0, coreCanvas.width, coreCanvas.height);
+    virtualCtx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
+  }
+
+  // Reset the data structures that hold the core data
+  window.cores = [];
+  window.sortedCoresData = [];
+
+  // Update the UI if necessary
+  document.getElementById('jsonUrlInput').value = '';
+  document.getElementById('imageInput').value = '';
+  document.getElementById('imgUrlInput').value = '';
+
+  // Reset sliders and output elements to their default values
+  resetSlidersAndOutputs();
+}
+
+function resetSlidersAndOutputs() {
+  // Reset Image Parameters
+  document.getElementById('userRadius').value = 20;
+  document.getElementById('radiusValue').textContent = '20';
+  
+  document.getElementById('xOffset').value = 0;
+  document.getElementById('xOffsetValue').textContent = '0';
+  
+  document.getElementById('yOffset').value = 0;
+  document.getElementById('yOffsetValue').textContent = '0';
+  
+  // Reset Traveling Algorithm Parameters
+  document.getElementById('originAngle').value = 0;
+  
+  document.getElementById('radiusMultiplier').value = 0.7;
+  
+  // Assuming the gridWidth is used elsewhere and should be reset to its default
+  document.getElementById('gridWidth').value = 70;
+  
+  document.getElementById('gamma').value = 60;
+  
+  document.getElementById('multiplier').value = 1.5;
+  
+  document.getElementById('imageWidth').value = 1024;
+  
+  // Assuming the searchAngle is used elsewhere and should be reset to its default
+  document.getElementById('searchAngle').value = 360;
+
+  // Reset Edge Detection Parameters
+  document.getElementById('thresholdMultiplier').value = 1.5;
+  
+  document.getElementById('thresholdAngle').value = 10;
+  
+  // Reset Image Rotation Parameters
+  document.getElementById('minAngle').value = 0;
+  
+  document.getElementById('maxAngle').value = 360;
+  
+  document.getElementById('angleStepSize').value = 5;
+  
+  document.getElementById('angleThreshold').value = 20;
+
+  // Reset Virtual Grid Configuration
+  document.getElementById('horizontalSpacing').value = 50;
+  document.getElementById('horizontalSpacingValue').textContent = '50';
+  
+  document.getElementById('verticalSpacing').value = 50;
+  document.getElementById('verticalSpacingValue').textContent = '50';
+
+  document.getElementById('startingX').value = 50;
+  document.getElementById('startingXValue').textContent = '50';
+
+  document.getElementById('startingY').value = 50;
+  document.getElementById('startingYValue').textContent = '50';
 }
