@@ -2,6 +2,9 @@
 
 import * as tf from "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.14.0/+esm";
 
+import { preprocessCores } from "./delaunay_triangulation.js";
+
+
 function loadOpenCV() {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
@@ -187,8 +190,44 @@ async function preprocessAndPredict(imageElement, model) {
 }
 
 // Visualization function
-async function visualizePredictions(originalImage, predictions, container) {
-  const [width, height] = [originalImage.width, originalImage.height];
+// async function visualizePredictions(originalImage, predictions, container) {
+//   const [width, height] = [originalImage.width, originalImage.height];
+//   const canvas = document.createElement("canvas");
+//   const ctx = canvas.getContext("2d");
+//   canvas.width = width;
+//   canvas.height = height;
+
+//   // Draw the original image onto the canvas
+//   ctx.drawImage(originalImage, 0, 0, width, height);
+
+//   // Process predictions outside of tf.tidy
+//   const clippedPredictions = predictions.clipByValue(0, 1);
+//   const resizedPredictions = await tf.image.resizeBilinear(clippedPredictions, [
+//     height,
+//     width,
+//   ]);
+//   const squeezedPredictions = resizedPredictions.squeeze();
+//   const maskImageData = await tf.browser.toPixels(squeezedPredictions);
+
+//   // Dispose of the tensor since toPixels is done
+//   tf.dispose([clippedPredictions, resizedPredictions, squeezedPredictions]);
+
+//   // Create ImageData object with the mask data
+//   const imageData = new ImageData(maskImageData, width, height);
+
+//   // Draw the mask on top of the original image
+//   ctx.putImageData(imageData, 0, 0);
+
+//   // Set the source of the container to the canvas data
+//   container.src = canvas.toDataURL();
+
+//   // Ensure predictions are disposed
+//   predictions.dispose();
+// }
+
+// Visualization function
+async function visualizePredictions(originalImage, predictions, properties, container, alpha=0.3) {
+  const [width, height] = [originalImage.naturalWidth, originalImage.naturalHeight];
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   canvas.width = width;
@@ -197,30 +236,47 @@ async function visualizePredictions(originalImage, predictions, container) {
   // Draw the original image onto the canvas
   ctx.drawImage(originalImage, 0, 0, width, height);
 
-  // Process predictions outside of tf.tidy
-  const clippedPredictions = predictions.clipByValue(0, 1);
-  const resizedPredictions = await tf.image.resizeBilinear(clippedPredictions, [
-    height,
-    width,
-  ]);
-  const squeezedPredictions = resizedPredictions.squeeze();
-  const maskImageData = await tf.browser.toPixels(squeezedPredictions);
+  // Process predictions and draw the mask on top of the original image
+  const mask = await tf.tidy(() => {
+    const clippedPredictions = predictions.clipByValue(0, 1);
+    const resizedPredictions = tf.image.resizeBilinear(clippedPredictions, [height, width]);
+    const squeezedPredictions = resizedPredictions.squeeze();
+    return squeezedPredictions.arraySync(); // Convert to a regular array for pixel manipulation
+  });
 
-  // Dispose of the tensor since toPixels is done
-  tf.dispose([clippedPredictions, resizedPredictions, squeezedPredictions]);
+  // Draw the mask with semi-transparency
+  ctx.globalAlpha = alpha;
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      const maskValue = mask[i][j];
+      if (maskValue > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${maskValue})`;
+        ctx.fillRect(j, i, 1, 1);
+      }
+    }
+  }
+  ctx.globalAlpha = 1.0;
 
-  // Create ImageData object with the mask data
-  const imageData = new ImageData(maskImageData, width, height);
+  // Draw a red dot at each centroid
+  // Ensure properties is an array before using forEach
+  if (properties && typeof properties === 'object') {
+    properties = Object.values(properties); // Convert object to array if necessary
+  }
 
-  // Draw the mask on top of the original image
-  ctx.putImageData(imageData, 0, 0);
+  properties.forEach((prop) => {
+    ctx.beginPath();
+    ctx.arc(prop.x, prop.y, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = "blue";
+    ctx.fill();
+  });
 
   // Set the source of the container to the canvas data
   container.src = canvas.toDataURL();
 
-  // Ensure predictions are disposed
+  // Since we used arraySync, we're responsible for disposing of the predictions tensor
   predictions.dispose();
 }
+
 
 // Function to apply the threshold to the predictions
 function applyThreshold(predictions, threshold) {
@@ -232,7 +288,8 @@ async function processAndVisualizeImage(
   model,
   originalImageElement,
   visualizationContainer,
-  threshold
+  threshold,
+  alpha=0.3,
 ) {
   // Preprocess the image and predict
   const predictions = await preprocessAndPredict(originalImageElement, model);
@@ -242,7 +299,8 @@ async function processAndVisualizeImage(
   await visualizePredictions(
     originalImageElement,
     thresholdedPredictions,
-    visualizationContainer
+    visualizationContainer,
+    alpha,
   );
   return thresholdedPredictions;
 }
@@ -270,6 +328,7 @@ function tensorToCvMat(tensor) {
 
 // Main function to run the full prediction and visualization pipeline
 // Main function to run the full prediction and visualization pipeline
+// Updated Main function to run the full prediction and visualization pipeline
 async function runPipeline(
   imageElement,
   model,
@@ -277,7 +336,8 @@ async function runPipeline(
   minArea,
   maxArea,
   disTransformMultiplier,
-  visualizationContainer
+  visualizationContainer,
+  maskAlpha=0.3,
 ) {
   // Preprocess the image and predict
   const predictions = await preprocessAndPredict(imageElement, model);
@@ -304,17 +364,17 @@ async function runPipeline(
   }
 
   window.properties = properties;
-  // Visualize the predictions with the centers
+  window.cores = preprocessCores(properties);
+
+  // Visualize the predictions with the mask overlay and centroids
   await visualizePredictions(
     imageElement,
     thresholdedPredictions,
-    visualizationContainer
+    properties,
+    visualizationContainer,
+    maskAlpha,
   );
-
-  // Then visualize the centers on top of the predictions
-  visualizeCenters(properties, visualizationContainer);
 }
-
 
 // Function to visualize centers
 function visualizeCenters(properties, imageElement) {

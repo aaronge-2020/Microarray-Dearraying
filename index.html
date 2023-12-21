@@ -2,68 +2,300 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tissue Segmentation Tool</title>
-  <link rel="stylesheet" href="style_core_detect.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De-arraying Visualization</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-  <div class="container">
     <header>
-      <div class="logo">
-        <h1>Tissue Segmentation Tool</h1>
-      </div>
-      <nav>
-        <ul>
-          <li><a href="./index.html">Core Detection</a></li>
-          <li><a href="./gridding.html">Gridding</a></li>
-          <li><a href="https://github.com/aaronge-2020/Microarray-Dearraying/">GitHub</a></li>
-          <li><a href="#paper">Paper</a></li>
-        </ul>
-      </nav>
+        <div class="logo">
+            <h1>Tissue Segmentation Tool</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="https://github.com/aaronge-2020/Microarray-Dearraying/">GitHub</a></li>
+                <li><a href="#paper">Paper</a></li>
+            </ul>
+        </nav>
     </header>
-    <div id="notification"></div>
-    <div class="main-content">
-      <aside class="sidebar">
 
-        <label for="fileInput" class="file-input-label">
-          Select a file
-          <br>
-          Drop file here
-          <input id="fileInput" type="file" accept="image/*" style="display: none;">
-        </label>
+    <div class="app-container">
+        <div class="sidebar" id="imageSegmentationSidebar">
+            <!-- Form for hyperparameters -->
+            <form id="segmentation-hyperparameters-form">
+        
+                <!-- Image file input section -->
+                <div class="file-upload-container">
+                    <h2>1) Load Image</h2>
+                    <div id="segmentationImageLoadStatus" class="load-status neutral-message">
+                        No image file uploaded.
+                    </div>
+        
+                    <label for="fileInput" class="file-dropzone">
+                        <div class="file-input-btn">Select an Image File</div>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                        <p>Drop image file here</p>
+                    </label>
+                    <br>
+                    <p style="text-align: center;">OR</p>
+                    <br>
+                    <label for="imageUrlInput">Paste in Image URL:</label>
+                    <input type="text" id="imageUrlInput" placeholder="Enter Image URL"
+                           value="https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png" />
+                    <button id="loadImageUrlBtn" type="button" class="load-img-btn">Load Image</button>
+                    <br>
+                </div>
+        
+                <!-- Hyperparameter settings -->
+                <div class="hyperparameters">
+                    <h2>2) Configure Parameters</h2>
+        
+                    <!-- Segmentation Parameters Section -->
+                    <fieldset>
+                        <legend>Segmentation Parameters</legend>
+
+                        <label for="maskAlphaSlider">Mask Alpha: <span id="maskAlphaValue">0.3</span></label>
+                        <input type="range" id="maskAlphaSlider" min="0" max="1" step="0.025" value="0.3">
+        
+
+                        <label for="thresholdSlider">Segmentation Threshold: <span id="thresholdValue">0.5</span></label>
+                        <input type="range" id="thresholdSlider" min="0" max="1" step="0.0025" value="0.5">
+        
+                        <label for="minAreaInput">Min Area:</label>
+                        <input type="number" id="minAreaInput" value="10" step="1" min="1" />
+        
+                        <label for="maxAreaInput">Max Area:</label>
+                        <input type="number" id="maxAreaInput" value="500" step="1" min="1" />
+        
+                        <label for="disTransformMultiplierInput">Distance Transform Multiplier:</label>
+                        <input type="number" id="disTransformMultiplierInput" value="0.5" step="0.1" min="0.1" max="1" />
+                    </fieldset>
+        
+                    <button type="button" id="applySegmentation">Apply Segmentation</button>
+                    <br>
+                </div>
+        
+                <button type="button" id="downloadSegmentationResults">Download JSON</button>
+            </form>
+        </div>
+        
+
+        <div class="sidebar" id="rawDataSidebar" style="display: none;">
+            <!-- Form for hyperparameters -->
+            <form id="hyperparameters-form">
 
 
-        <label for="imageUrlInput">Image URL:</label>
-        <input type="text" id="imageUrlInput" placeholder="Enter image URL" value = "https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png" />
-        <button id="loadImageUrlBtn" class="load-image-url-btn">Load Image from URL</button>
+                <div class="hyperparameters">
+
+                    <!-- Hyperparameter form section -->
+                    <h2>Configure Parameter</h2>
+
+                    <!-- Image Parameters Section -->
+                    <fieldset>
+                        <legend>Image Parameters</legend>
+                        <label for="userRadius">Core Radius:</label>
+                        <input type="range" id="userRadius" name="userRadius" min="1" max="100" value="20">
+                        <output id="radiusValue" for="userRadius">20</output>
+                        <!-- X Offset slider section -->
+
+                        <label for="xOffset">X Offset:</label>
+                        <input type="range" id="xOffset" name="xOffset" min="-100" max="100" value="0">
+                        <output id="xOffsetValue" for="xOffset">0</output>
+
+                        <!-- Y Offset slider section -->
+
+                        <label for="yOffset">Y Offset:</label>
+                        <input type="range" id="yOffset" name="yOffset" min="-100" max="100" value="0">
+                        <output id="yOffsetValue" for="yOffset">0</output>
+                    </fieldset>
 
 
-        <label for="thresholdSlider">Threshold: <span id="thresholdValue">0.5</span></label>
-        <input type="range" id="thresholdSlider" min="0" max="1" step="0.0025" value="0.5">
+                    <!-- Traveling Algorithm Section -->
+                    <fieldset>
+                        <legend>Traveling Algorithm Parameters</legend>
 
-        <label for="minAreaInput">Min Area:</label>
-        <input type="number" id="minAreaInput" value="10" step="1" min="1" />
-    
-        <label for="maxAreaInput">Max Area:</label>
-        <input type="number" id="maxAreaInput" value="500" step="1" min="1" />
-    
-        <label for="disTransformMultiplierInput">Distance Transform Multiplier:</label>
-        <input type="number" id="disTransformMultiplierInput" value="0.5" step="0.1" min="0.1" max="1" />
-    
-        <button id="downloadBtn" class="download-btn">Download JSON</button>
-      </aside>
 
-      <main class="image-container">
-        <img id="originalImage" src="#" alt="Original Tissue">
-        <img id="processedImage" src="#" alt="Processed Tissue">
-      </main>
+                        <label for="originAngle" title="Rotation of the image in degrees">Image Rotation</label>
+                        <input type="number" id="originAngle" name="originAngle" step="1" value="0">
+
+                        <label for="radiusMultiplier"
+                            title="Multiplier for the radius used in the traveling algorithm">Radius Multiplier</label>
+                        <input type="number" id="radiusMultiplier" name="radiusMultiplier" step="0.1" value="0.7">
+
+                        <label for="gridWidth" title="Width of one square in the grid used in the traveling algorithm"
+                            style="display: none">Grid Width</label>
+                        <input type="number" id="gridWidth" name="gridWidth" step="1" value="70" style="display: none">
+
+                        <label for="gamma"
+                            title="Distance after the the core with the greatest X value to stop the traveling algorithm">Stopping
+                            Distance</label>
+                        <input type="number" id="gamma" name="gamma" step="1" value="60">
+
+
+                        <label for="multiplier"
+                            title="Multiplier for the grid width calculation in the traveling algorithm"
+                            style="display: none">Multiplier for
+                            Grid Width</label>
+                        <input type="number" id="multiplier" name="multiplier" step="0.1" value="1.5"
+                            style="display: none">
+
+                        <label for="imageWidth" title="Width of the entire gird used in the traveling algorithm">Image
+                            Width</label>
+                        <input type="number" id="imageWidth" name="imageWidth" step="1" value="1024">
+
+                        <label for="searchAngle" title="Angle to search in the traveling algorithm"
+                            style="display: none">Search Angle</label>
+                        <input type="number" id="searchAngle" name="searchAngle" step="1" value="360"
+                            style="display: none">
+
+                    </fieldset>
+
+                    <!-- Add a button/link for the collapsible dropdown -->
+                    <button id="toggle-advanced-settings" type="button">Show Advanced Settings</button>
+                    <!-- Wrap hidden fieldsets in a div -->
+                    <div id="advanced-settings" style="display: none;">
+                        <!-- Edge Detection Section -->
+                        <fieldset>
+                            <legend>Edge Detection Parameters</legend>
+
+
+                            <label for="thresholdMultiplier"
+                                title="Multiplier for the median absolute deviation to filter edges by length">Length
+                                Threshold
+                                Multiplier</label>
+                            <input type="number" id="thresholdMultiplier" name="thresholdMultiplier" step="0.1"
+                                value="1.5">
+
+                            <label for="thresholdAngle"
+                                title="The angle within which edges are considered valid">Threshold
+                                Angle</label>
+                            <input type="number" id="thresholdAngle" name="thresholdAngle" step="1" value="10">
+                        </fieldset>
+
+                        <!-- Image Rotation Section -->
+                        <fieldset>
+                            <legend>Image Rotation Parameters</legend>
+
+                            <label for="minAngle" title="Minimum angle to test for image rotation">Minimum Angle</label>
+                            <input type="number" id="minAngle" name="minAngle" step="1" value="0">
+
+                            <label for="maxAngle" title="Maximum angle to test for image rotation">Maximum Angle</label>
+                            <input type="number" id="maxAngle" name="maxAngle" step="1" value="360">
+
+                            <label for="angleStepSize"
+                                title="Incremental step size for testing angles during image rotation">Angle Step
+                                Size</label>
+                            <input type="number" id="angleStepSize" name="angleStepSize" step="1" value="5">
+
+                            <label for="angleThreshold"
+                                title="Angle threshold used when filtering edges by angle for image rotation">Angle
+                                Threshold</label>
+                            <input type="number" id="angleThreshold" name="angleThreshold" step="1" value="20">
+                        </fieldset>
+
+                    </div>
+
+                    <button type="button" id="apply-hyperparameters">Apply Gridding</button>
+                    <br>
+                </div>
+                <button type="button" id="saveResults">Save Results</button>
+
+            </form>
+
+        </div>
+
+        <!-- Additional sidebar for Virtual Grid adjustments -->
+        <div class="sidebar" id="virtualGridSidebar" style="display: none;">
+            <h2>Virtual Grid Configuration</h2>
+            <div class="hyperparameters">
+                <fieldset>
+                    <legend>Grid Spacing Parameters</legend>
+                    <label for="horizontalSpacing">Horizontal Spacing:</label>
+                    <input type="range" id="horizontalSpacing" name="horizontalSpacing" min="1" max="100" value="50">
+                    <output id="horizontalSpacingValue" for="horizontalSpacing">50</output>
+
+                    <label for="verticalSpacing">Vertical Spacing:</label>
+                    <input type="range" id="verticalSpacing" name="verticalSpacing" min="1" max="100" value="50">
+                    <output id="verticalSpacingValue" for="verticalSpacing">50</output>
+
+                    <label for="startingX">Starting X:</label>
+                    <input type="range" id="startingX" name="startingX" min="1" max="100" value="50">
+                    <output id="startingXValue" for="startingX">50</output>
+
+                    <label for="startingY">Starting Y:</label>
+                    <input type="range" id="startingY" name="startingY" min="1" max="100" value="50">
+                    <output id="startingYValue" for="startingY">50</output>
+
+                </fieldset>
+                <button type="button" id="applyVirtualGridSettings">Apply Grid Settings</button>
+            </div>
+        </div>
+
+        <div class="content" style="width: 100%; height: 100%">
+
+            <!-- Tab Links -->
+            <div class="tab">
+                <button class="tablinks" onclick="openTab(event, 'ImageSegmentation')" id="imageSegmentationTabButton">Image Segmentation</button>
+                <button class="tablinks" onclick="openTab(event, 'RawData')" id="rawDataTabButton">Raw Data</button>
+                <button class="tablinks" onclick="openTab(event, 'VirtualGrid')" id="virtualGridTabButton">Virtual
+                    Grid</button>
+            </div>
+
+
+            <!-- Tab content -->
+
+            <div id="ImageSegmentation" class="tabcontent">
+                <img id="originalImage" src="#" alt="Original Tissue" style="display: none;">
+                <img id="processedImage" src="#" alt="Processed Tissue">
+            </div>
+
+
+            <div id="RawData" class="tabcontent">
+                <canvas id="coreCanvas" width="1024" height="1024" style="border:none;"></canvas>
+                <!-- Put other raw data related content here -->
+            </div>
+
+            <div id="VirtualGrid" class="tabcontent">
+                <canvas id="virtualGridCanvas" width="1024" height="1024" style="border:none;"></canvas>
+                <!-- Put other virtual grid related content here -->
+            </div>
+
+        </div>
+        <script>
+            // Call this function to open the default tab
+            function openDefaultTab() {
+                // Get the element with id="defaultOpen" and click on it
+                document.getElementById("imageSegmentationTabButton").click();
+            }
+
+            // The openTab function as before
+            function openTab(evt, tabName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }
+
+            // When the window loads, open the default tab
+            window.onload = openDefaultTab;
+
+
+        </script>
+
+
     </div>
-  </div>
 
-  <script type="module" src="segmentation.js"></script>
+    <script type="module" src="main.js"></script>
+
 </body>
 
 </html>

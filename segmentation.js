@@ -1,12 +1,5 @@
 import { loadModel, runPipeline, loadOpenCV } from "./core_detection.js";
 
-// Pure function to create a new image element
-const createImageElement = (width, height) => {
-  const img = new Image();
-  img.width = width;
-  img.height = height;
-  return img;
-};
 
 // Initialize image elements
 const originalImageContainer = document.getElementById("originalImage");
@@ -91,38 +84,6 @@ const updateVisualization = (state) => {
     );
   }
 };
-// Function to load image from URL and run the pipeline
-const loadImageFromUrl = (url, model, processImageCallback) => {
-  const image = new Image();
-  image.crossOrigin = "anonymous"; // Added for CORS, if needed
-  image.onload = () => {
-    processImageCallback(image, model);
-  };
-  image.onerror = () => {
-    console.error("Failed to load image from URL.");
-  };
-  image.src = url;
-};
-
-// Process image callback
-const processImageCallback = (image, model) => {
-  const threshold = parseFloat(getInputValue("thresholdSlider"));
-  const minArea = parseInt(getInputValue("minAreaInput"), 10);
-  const maxArea = parseInt(getInputValue("maxAreaInput"), 10);
-  const disTransformMultiplier = parseFloat(
-    getInputValue("disTransformMultiplierInput")
-  );
-
-  runPipeline(
-    image,
-    model,
-    threshold,
-    minArea,
-    maxArea,
-    disTransformMultiplier,
-    processedImageCanvas
-  );
-};
 
 // Event handler for load image from URL
 const handleLoadImageUrlClick = (state) => {
@@ -168,8 +129,6 @@ const initApp = async () => {
       .addEventListener(event, () => updateVisualization(state));
   });
 
-  // Additional event bindings and functionalities
-  // ...
 };
 
 // Run the app

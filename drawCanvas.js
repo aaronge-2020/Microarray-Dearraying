@@ -66,8 +66,8 @@ async function applyAndVisualize() {
     // Use the loaded image if available, otherwise use default or file input image
     const imageSrc = window.loadedImg
       ? window.loadedImg.src
-      : document.getElementById("imageInput").files.length > 0
-      ? URL.createObjectURL(document.getElementById("imageInput").files[0])
+      : document.getElementById("fileInput").files.length > 0
+      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
       : "path/to/default/image.jpg";
 
     drawCoresOnCanvas(imageSrc, window.cores);
@@ -187,8 +187,8 @@ function updateVirtualGridSpacing(
     // Use the loaded image if available, otherwise use default or file input image
     const imageSrc = window.loadedImg
       ? window.loadedImg.src
-      : document.getElementById("imageInput").files.length > 0
-      ? URL.createObjectURL(document.getElementById("imageInput").files[0])
+      : document.getElementById("fileInput").files.length > 0
+      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
       : "path/to/default/image.jpg";
   
     // Clear the existing grid
@@ -207,7 +207,7 @@ function updateVirtualGridSpacing(
   
 // Function to redraw the cores on the canvas
 function redrawCores() {
-    const imageFile = document.getElementById("imageInput").files[0];
+    const imageFile = document.getElementById("fileInput").files[0];
     if ((imageFile || window.loadedImg) && window.cores) {
       if (window.loadedImg) {
         drawCoresOnCanvas(window.loadedImg.src, window.cores);

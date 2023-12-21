@@ -4,14 +4,39 @@ import * as math from "https://esm.sh/mathjs@12.2.0";
 
 import * as Plotly from "https://cdn.jsdelivr.net/npm/plotly.js-dist/+esm";
 
+// function preprocessCores(cores) {
+//   // If cores is an object, convert it to an array
+//   if (typeof cores === "object" && !Array.isArray(cores)) {
+//     cores = Object.values(cores);
+//   }
+
+//   const minX = Math.min(...cores.map((core) => core.x));
+//   const minY = Math.min(...cores.map((core) => core.y));
+
+//   window.preprocessingData = {
+//     minX,
+//     minY,
+//   };
+
+//   // Normalize the coordinates
+//   return cores.map((core) => {
+//     // Perform the transformation
+//     core.x = core.x - minX;
+//     core.y = core.y - minY;
+
+//     return core;
+//   });
+// }
+
 function preprocessCores(cores) {
   // If cores is an object, convert it to an array
+  let coresArray = cores;
   if (typeof cores === "object" && !Array.isArray(cores)) {
-    cores = Object.values(cores);
+    coresArray = Object.values(cores);
   }
 
-  const minX = Math.min(...cores.map((core) => core.x));
-  const minY = Math.min(...cores.map((core) => core.y));
+  const minX = Math.min(...coresArray.map((core) => core.x));
+  const minY = Math.min(...coresArray.map((core) => core.y));
 
   window.preprocessingData = {
     minX,
@@ -19,14 +44,16 @@ function preprocessCores(cores) {
   };
 
   // Normalize the coordinates
-  return cores.map((core) => {
-    // Perform the transformation
-    core.x = core.x - minX;
-    core.y = core.y - minY;
-
-    return core;
+  return coresArray.map((core) => {
+    // Perform the transformation without mutating the original core object
+    return {
+      ...core, // Spread operator to copy properties of the original core object
+      x: core.x - minX,
+      y: core.y - minY
+    };
   });
 }
+
 
 function getEdgesFromTriangulation(cores) {
   const delaunay = d3.Delaunay.from(cores.map((core) => [core.x, core.y]));

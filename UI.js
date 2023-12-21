@@ -62,14 +62,24 @@ function updateStatusMessage(elementId, message, statusType) {
   // Function to show raw data sidebar
   function showRawDataSidebar() {
     document.getElementById("rawDataSidebar").style.display = "block";
+    document.getElementById("imageSegmentationSidebar").style.display = "none";
     document.getElementById("virtualGridSidebar").style.display = "none";
   }
   
   // Function to show virtual grid sidebar
   function showVirtualGridSidebar() {
     document.getElementById("rawDataSidebar").style.display = "none";
+    document.getElementById("imageSegmentationSidebar").style.display = "none";
     document.getElementById("virtualGridSidebar").style.display = "block";
   }
+
+    // Function to show virtual grid sidebar
+    function showImageSegmentationSidebar() {
+        document.getElementById("rawDataSidebar").style.display = "none";
+        document.getElementById("imageSegmentationSidebar").style.display = "block";
+        document.getElementById("virtualGridSidebar").style.display = "none";
+    }
+
 
   function resetSlidersAndOutputs() {
     // Reset Image Parameters
@@ -150,10 +160,8 @@ function updateStatusMessage(elementId, message, statusType) {
     window.preprocessingData = null;
   
     // Update the UI if necessary
-    document.getElementById("jsonUrlInput").value =
-      "https://raw.githubusercontent.com/aaronge-2020/Microarray-Dearraying/main/TMA_WSI_Labels_updated/158871.json";
-    document.getElementById("imageInput").value = "";
-    document.getElementById("imgUrlInput").value =
+    
+    document.getElementById("imageUrlInput").value =
       "https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png";
   
     // Reset sliders and output elements to their default values
@@ -167,6 +175,7 @@ function updateStatusMessage(elementId, message, statusType) {
     highlightTab,
     showRawDataSidebar,
     showVirtualGridSidebar,
+    showImageSegmentationSidebar,
     resetSlidersAndOutputs,
     resetApplication
   }
