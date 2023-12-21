@@ -96,13 +96,29 @@ window.addEventListener("load", initFromURL);
 document.getElementById("loadJsonBtn").addEventListener("click", async () => {
   resetApplication();
 
+  document.getElementById("jsonLoadStatus").innerHTML =
+    '<div class="spinner"></div>';
+
   const jsonUrl = document.getElementById("jsonUrlInput").value;
   let jsonData = null;
   try {
     jsonData = await loadJSONFromURL(jsonUrl);
+
+    updateStatusMessage(
+      "jsonLoadStatus",
+      "JSON Loaded Successfully",
+      "success-message"
+    )
+
   } catch (error) {
+
+      updateStatusMessage(
+      "jsonLoadStatus",
+      "Error Loading JSON",
+      "error-message"
+    )
+
     console.error("Error loading JSON from URL:", error);
-    return null;
   }
   window.cores = preprocessCores(jsonData);
   await loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
@@ -123,13 +139,20 @@ document.getElementById("loadImgBtn").addEventListener("click", async () => {
     return;
   }
 
+  document.getElementById("imageLoadStatus").innerHTML =
+    '<div class="spinner"></div>';
+
   const image = new Image();
   image.src = imgUrl;
   image.onload = async () => {
     // Save the loaded image globally
     window.loadedImg = image;
-
     if (window.cores && window.cores.length > 0) {
+
+        updateStatusMessage("imageLoadStatus",
+          "Image loaded successfully.",
+          "success-message"
+        );
       const xOffsetValue = document.getElementById("xOffsetValue");
       const xOffset = document.getElementById("xOffset");
       xOffset.value = window.preprocessingData.minX;
@@ -153,6 +176,12 @@ document.getElementById("loadImgBtn").addEventListener("click", async () => {
   };
 
   image.onerror = () => {
+
+      updateStatusMessage("imageLoadStatus",
+      "Image failed to load.",
+      "error-message"
+    );
+
     console.error("Image failed to load from the provided URL.");
   };
 });
@@ -163,7 +192,19 @@ function handleFileLoad(event) {
     window.cores = preprocessCores(JSON.parse(event.target.result));
 
     loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
+
+    updateStatusMessage("jsonLoadStatus",
+      "JSON loaded successfully.",
+      "success-message"
+    );
+
   } catch (error) {
+    
+      updateStatusMessage("jsonLoadStatus",
+      "Error loading JSON.",
+      "error-message"
+    );
+
     console.error("Error processing file:", error);
   }
 }
@@ -340,6 +381,12 @@ document
     showVirtualGridSidebar();
     highlightTab(this); // This function will highlight the active tab, it's implementation is shown below
   });
+
+function updateStatusMessage(elementId, message, statusType) {
+  const statusElement = document.getElementById(elementId);
+  statusElement.className = `load-status ${statusType}`; // Apply the corresponding class
+  statusElement.textContent = message; // Set the text message
+}
 
 // Function to highlight the active tab
 function highlightTab(activeTab) {
@@ -609,9 +656,13 @@ document
     const reader = new FileReader();
     reader.onload = function (e) {
       const imageSrc = e.target.result;
-
       // Check if cores data is available before drawing
       if (window.cores && window.cores.length > 0) {
+          updateStatusMessage("imageLoadStatus",
+            "Image Loaded Successfully",
+            "success-message"
+          )
+
         const xOffsetValue = document.getElementById("xOffsetValue");
         const xOffset = document.getElementById("xOffset");
         xOffset.value = window.preprocessingData.minX;
@@ -633,6 +684,16 @@ document
         alert("Please load the JSON file first.");
       }
     };
+    reader.onerror = function (e) {
+
+        updateStatusMessage("imageLoadStatus",
+        "Error Loading Image",
+        "error-message"
+      )
+
+      console.error("Error loading image:", e);
+    };
+
     reader.readAsDataURL(event.target.files[0]);
   });
 document.getElementById("userRadius").addEventListener("input", function () {

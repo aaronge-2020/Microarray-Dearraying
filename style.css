@@ -213,3 +213,65 @@ button:hover {
 #toggle-advanced-settings:active {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
+.load-status {
+  margin-top: 10px;
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: opacity 0.3s ease-in-out;
+}
+
+.success-message {
+  color: #4CAF50; /* A pleasant green */
+  background-color: #EDF7ED; /* A very light green background */
+}
+
+.error-message {
+  color: #F44336; /* A soft red */
+  background-color: #FDEDEE; /* A very light red background */
+}
+
+/* Optional: Add icons through pseudo-elements */
+.success-message::before {
+  content: "\2713"; /* Unicode checkmark */
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.error-message::before {
+  content: "\26A0"; /* Unicode warning sign */
+  display: inline-block;
+  margin-right: 8px;
+}
+.neutral-message {
+  color: #333; /* A neutral, dark grey color for text */
+  background-color: #f5f5f5; /* A light grey background */
+  border: 1px dashed #ccc; /* A dashed border for emphasis */
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: opacity 0.3s ease-in-out;
+}
+
+
+/* Spinner styles */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 2s linear infinite;
+}
