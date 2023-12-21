@@ -269,6 +269,7 @@ function tensorToCvMat(tensor) {
 }
 
 // Main function to run the full prediction and visualization pipeline
+// Main function to run the full prediction and visualization pipeline
 async function runPipeline(
   imageElement,
   model,
@@ -293,6 +294,15 @@ async function runPipeline(
     disTransformMultiplier
   );
 
+  // Scale centroids back to the original image size
+  const scaleX = imageElement.width / 512;
+  const scaleY = imageElement.height / 512;
+  for (const prop in properties) {
+    properties[prop].x *= scaleX;
+    properties[prop].y *= scaleY;
+    properties[prop].radius *= Math.sqrt(scaleX * scaleY); // Scale the radius appropriately
+  }
+
   window.properties = properties;
   // Visualize the predictions with the centers
   await visualizePredictions(
@@ -304,6 +314,7 @@ async function runPipeline(
   // Then visualize the centers on top of the predictions
   visualizeCenters(properties, visualizationContainer);
 }
+
 
 // Function to visualize centers
 function visualizeCenters(properties, imageElement) {
