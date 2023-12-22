@@ -26,10 +26,6 @@ import { loadModel, runPipeline, loadOpenCV } from "./core_detection.js";
 const originalImageContainer = document.getElementById("originalImage");
 const processedImageCanvas = document.getElementById("processedImage");
 
-// Pure function to update HTML element properties
-const updateElementProperty = (element, property, value) => {
-  element[property] = value;
-};
 
 // Load dependencies and return updated state
 const loadDependencies = async () => ({
@@ -386,10 +382,6 @@ const initSegmentation = async () => {
         alert("No image uploaded!");
         return;
       }
-
-      // Show loading spinner
-      document.getElementById('loadingSpinner').style.display = 'block';
-
 
       segmentImage();
 
