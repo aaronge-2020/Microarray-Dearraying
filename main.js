@@ -4,6 +4,9 @@ import {
   highlightTab,
   showImageSegmentationSidebar,
   getHyperparametersFromUI,
+  updateSliderUIText,
+  updateStatusMessage,
+  resetApplication,
 } from "./UI.js";
 
 import { saveUpdatedCores } from "./data_processing.js";
@@ -48,63 +51,155 @@ const processImage = (
   outputCanvas,
   alpha = 0.3
 ) => {
-  runPipeline(
-    originalImage,
-    model,
-    threshold,
-    minArea,
-    maxArea,
-    disTransformMultiplier,
-    outputCanvas,
-    alpha = alpha
-  );
+  try {
+    runPipeline(
+      originalImage,
+      model,
+      threshold,
+      minArea,
+      maxArea,
+      disTransformMultiplier,
+      outputCanvas,
+      alpha = alpha
+    );
+  } catch (error) {
+    console.error('Error processing image:', error);
+  } finally {
+    // Hide loading spinner
+    document.getElementById('loadingSpinner').style.display = 'none';
+  }
+
 };
 
 // Event handler for file input change
 const handleFileInputChange = async (e, processCallback) => {
+
+  resetApplication();
+
+
+  // Show loading spinner
+  document.getElementById('loadingSpinner').style.display = 'block';
+
   const file = e.target.files[0];
   if (file && file.type.startsWith("image/")) {
     const reader = new FileReader();
     reader.onload = async (event) => {
       originalImageContainer.src = event.target.result;
       originalImageContainer.onload = async () => {
+
+        updateStatusMessage("imageLoadStatus",
+          "Image loaded successfully.",
+          "success-message"
+        );
+
+
         processCallback();
+      };
+
+      originalImageContainer.onerror = () => {
+
+        updateStatusMessage("imageLoadStatus",
+          "Image failed to load.",
+          "error-message"
+        );
+
+        console.error("Image failed to load.");
       };
     };
     reader.readAsDataURL(file);
+  } else {
+    updateStatusMessage("imageLoadStatus",
+      "File loaded is not an image.",
+      "error-message"
+    );
+
+    console.error("Image failed to load.");
   }
 };
 
-// Main function to update visualization
-const updateSegmentationVisualization = (state) => {
+// Function to get input parameters from the UI
+const getInputParameters = () => {
   const threshold = parseFloat(getInputValue("thresholdSlider"));
   const maskAlpha = parseFloat(getInputValue("maskAlphaSlider"));
+  const minArea = parseInt(getInputValue("minAreaInput"), 10);
+  const maxArea = parseInt(getInputValue("maxAreaInput"), 10);
+  const disTransformMultiplier = parseFloat(getInputValue("disTransformMultiplierInput"));
 
-  updateElementProperty(
-    document.getElementById("thresholdValue"),
-    "textContent",
-    threshold.toFixed(2)
-  );
+  return {
+    threshold,
+    maskAlpha,
+    minArea,
+    maxArea,
+    disTransformMultiplier
+  };
+};
 
-  updateElementProperty(
-    document.getElementById("maskAlphaValue"),
-    "textContent",
-    maskAlpha.toFixed(2)
-  );
+
+
+// Event handler for load image from URL
+const handleLoadImageUrlClick = (state) => {
+  resetApplication();
+
+  // Show loading spinner
+  document.getElementById('loadingSpinner').style.display = 'block';
+
+  const imageUrl = getInputValue("imageUrlInput");
+
+  if (imageUrl) {
+    fetch(imageUrl)
+      .then(response => {
+        if (response.ok) {
+          return response.blob();
+        } else {
+          updateStatusMessage("imageLoadStatus",
+            "Invalid image URL.",
+            "error-message"
+          );
+          throw new Error('Network response was not ok.');
+        }
+      })
+      .then(blob => {
+        let objectURL = URL.createObjectURL(blob);
+        originalImageContainer.crossOrigin = "anonymous";
+        originalImageContainer.src = objectURL;
+
+        originalImageContainer.onload = async () => {
+          window.loadedImg = originalImageContainer;
+
+          updateStatusMessage("imageLoadStatus",
+            "Image loaded successfully.",
+            "success-message"
+          );
+          segmentImage();
+        };
+      })
+      .catch(error => {
+        updateStatusMessage("imageLoadStatus",
+          "Invalid image URL.",
+          "error-message"
+        );
+        console.error('There has been a problem with your fetch operation: ', error);
+      });
+  } else {
+    updateStatusMessage("imageLoadStatus",
+      "Invalid Image.",
+      "error-message"
+    );
+    console.error("Please enter a valid image URL");
+  }
+};
+
+async function segmentImage() {
+
+  const { threshold, maskAlpha, minArea, maxArea, disTransformMultiplier } = getInputParameters();
 
   if (
     originalImageContainer.src &&
     originalImageContainer.src[originalImageContainer.src.length - 1] !== "#"
   ) {
-    const minArea = parseInt(getInputValue("minAreaInput"), 10);
-    const maxArea = parseInt(getInputValue("maxAreaInput"), 10);
-    const disTransformMultiplier = parseFloat(
-      getInputValue("disTransformMultiplierInput")
-    );
-
     processImage(
       originalImageContainer,
-      state.model,
+      window.state.model,
       threshold,
       minArea,
       maxArea,
@@ -113,25 +208,7 @@ const updateSegmentationVisualization = (state) => {
       maskAlpha
     );
   }
-};
-
-// Event handler for load image from URL
-const handleLoadImageUrlClick = (state) => {
-  const imageUrl = getInputValue("imageUrlInput");
-  
-  if (imageUrl) {
-    originalImageContainer.crossOrigin = "anonymous";
-    originalImageContainer.src = imageUrl;
-
-    originalImageContainer.onload = async () => {
-      window.loadedImg = originalImageContainer;
-
-      updateSegmentationVisualization(state);
-    };
-  } else {
-    console.error("Please enter a valid image URL");
-  }
-};
+}
 
 function bindEventListeners() {
   // Event listener for the Apply Hyperparameters button
@@ -263,11 +340,12 @@ function bindEventListeners() {
 // Initialize and bind events
 const initSegmentation = async () => {
   const state = await loadDependencies();
+  window.state = state;
 
   document
     .getElementById("fileInput")
     .addEventListener("change", (e) =>
-      handleFileInputChange(e, () => updateSegmentationVisualization(state))
+      handleFileInputChange(e, () => segmentImage())
     );
   document
     .getElementById("loadImageUrlBtn")
@@ -276,19 +354,10 @@ const initSegmentation = async () => {
   ["input", "change"].forEach((event) => {
     document
       .getElementById("thresholdSlider")
-      .addEventListener(event, () => updateSegmentationVisualization(state));
+      .addEventListener(event, () => updateSliderUIText(state));
     document
-      .getElementById("minAreaInput")
-      .addEventListener(event, () => updateSegmentationVisualization(state));
-    document
-      .getElementById("maxAreaInput")
-      .addEventListener(event, () => updateSegmentationVisualization(state));
-    document
-      .getElementById("disTransformMultiplierInput")
-      .addEventListener(event, () => updateSegmentationVisualization(state));
-      document
       .getElementById("maskAlphaSlider")
-      .addEventListener(event, () => updateSegmentationVisualization(state));
+      .addEventListener(event, () => updateSliderUIText(state));
   });
   document
     .getElementById("downloadSegmentationResults")
@@ -317,6 +386,13 @@ const initSegmentation = async () => {
         alert("No image uploaded!");
         return;
       }
+
+      // Show loading spinner
+      document.getElementById('loadingSpinner').style.display = 'block';
+
+
+      segmentImage();
+
 
       loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
 
