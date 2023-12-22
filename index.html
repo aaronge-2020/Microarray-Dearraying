@@ -25,14 +25,14 @@
         <div class="sidebar" id="imageSegmentationSidebar">
             <!-- Form for hyperparameters -->
             <form id="segmentation-hyperparameters-form">
-        
+
                 <!-- Image file input section -->
                 <div class="file-upload-container">
                     <h2>1) Load Image</h2>
                     <div id="imageLoadStatus" class="load-status neutral-message">
                         No image file uploaded.
                     </div>
-        
+
                     <label for="fileInput" class="file-dropzone">
                         <div class="file-input-btn">Select an Image File</div>
                         <input type="file" id="fileInput" accept="image/*" hidden>
@@ -43,44 +43,46 @@
                     <br>
                     <label for="imageUrlInput">Paste in Image URL:</label>
                     <input type="text" id="imageUrlInput" placeholder="Enter Image URL"
-                           value="https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png" />
+                        value="https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png" />
                     <button id="loadImageUrlBtn" type="button" class="load-img-btn">Load Image</button>
                     <br>
                 </div>
-        
+
                 <!-- Hyperparameter settings -->
                 <div class="hyperparameters">
                     <h2>2) Configure Parameters</h2>
-        
+
                     <!-- Segmentation Parameters Section -->
                     <fieldset>
                         <legend>Segmentation Parameters</legend>
 
                         <label for="maskAlphaSlider">Mask Alpha: <span id="maskAlphaValue">0.3</span></label>
                         <input type="range" id="maskAlphaSlider" min="0" max="1" step="0.025" value="0.3">
-        
 
-                        <label for="thresholdSlider">Segmentation Threshold: <span id="thresholdValue">0.5</span></label>
+
+                        <label for="thresholdSlider">Segmentation Threshold: <span
+                                id="thresholdValue">0.5</span></label>
                         <input type="range" id="thresholdSlider" min="0" max="1" step="0.0025" value="0.5">
-        
+
                         <label for="minAreaInput">Min Area:</label>
                         <input type="number" id="minAreaInput" value="10" step="1" min="1" />
-        
+
                         <label for="maxAreaInput">Max Area:</label>
                         <input type="number" id="maxAreaInput" value="500" step="1" min="1" />
-        
+
                         <label for="disTransformMultiplierInput">Distance Transform Multiplier:</label>
-                        <input type="number" id="disTransformMultiplierInput" value="0.5" step="0.1" min="0.1" max="1" />
+                        <input type="number" id="disTransformMultiplierInput" value="0.5" step="0.1" min="0.1"
+                            max="1" />
                     </fieldset>
-        
+
                     <button type="button" id="applySegmentation">Apply Segmentation</button>
                     <br>
                 </div>
-        
+
                 <button type="button" id="downloadSegmentationResults">Download JSON</button>
             </form>
         </div>
-        
+
 
         <div class="sidebar" id="rawDataSidebar" style="display: none;">
             <!-- Form for hyperparameters -->
@@ -237,7 +239,8 @@
 
             <!-- Tab Links -->
             <div class="tab">
-                <button class="tablinks" onclick="openTab(event, 'ImageSegmentation')" id="imageSegmentationTabButton">Image Segmentation</button>
+                <button class="tablinks" onclick="openTab(event, 'ImageSegmentation')"
+                    id="imageSegmentationTabButton">Image Segmentation</button>
                 <button class="tablinks" onclick="openTab(event, 'RawData')" id="rawDataTabButton">Raw Data</button>
                 <button class="tablinks" onclick="openTab(event, 'VirtualGrid')" id="virtualGridTabButton">Virtual
                     Grid</button>
@@ -253,7 +256,7 @@
 
                 <div id="loadingSpinner" style="display: none;">
                     <div class="spinner"></div>
-                  </div>
+                </div>
             </div>
 
 

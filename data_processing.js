@@ -11,6 +11,10 @@ import {
     traveling_algorithm,
   } from "./delaunay_triangulation.js";
 
+  import { drawCoresOnCanvas } from "./drawCanvas.js";
+
+  import { getHyperparametersFromUI } from "./UI.js";
+
 function rotatePoint(point, angle) {
     const x = point[0];
     const y = point[1];
@@ -23,7 +27,28 @@ function rotatePoint(point, angle) {
   }
 
 
+  async function preprocessForTravelingAlgorithm(originalImageContainer) {
 
+    loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
+
+    const xOffsetValue = document.getElementById("xOffsetValue");
+    const xOffset = document.getElementById("xOffset");
+    xOffset.value = window.preprocessingData.minX;
+    xOffsetValue.value = window.preprocessingData.minX; // Update the output element with the slider value
+
+    const yOffset = document.getElementById("yOffset");
+    const yOffsetValue = document.getElementById("yOffsetValue");
+    yOffsetValue.value = window.preprocessingData.minY; // Update the output element with the slider value
+    yOffset.value = window.preprocessingData.minY;
+
+    // If there's an image and cores data, draw the cores with the new radius
+    drawCoresOnCanvas(
+      originalImageContainer.src,
+      window.cores,
+      window.preprocessingData.minX,
+      window.preprocessingData.minY
+    );
+  }
 
 async function runTravelingAlgorithm(normalizedCores, params) {
     const delaunayTriangleEdges = getEdgesFromTriangulation(normalizedCores);
@@ -171,5 +196,6 @@ async function runTravelingAlgorithm(normalizedCores, params) {
     rotatePoint,
     runTravelingAlgorithm,
     loadDataAndDetermineParams,
-    saveUpdatedCores
+    saveUpdatedCores,
+    preprocessForTravelingAlgorithm
   }

@@ -3,19 +3,19 @@ import {
   showVirtualGridSidebar,
   highlightTab,
   showImageSegmentationSidebar,
-  getHyperparametersFromUI,
   updateSliderUIText,
   updateStatusMessage,
   resetApplication,
 } from "./UI.js";
 
-import { saveUpdatedCores } from "./data_processing.js";
+import { saveUpdatedCores, preprocessForTravelingAlgorithm } from "./data_processing.js";
+
+import { preprocessCores } from "./delaunay_triangulation.js";
 
 import {
   applyAndVisualize,
   updateVirtualGridSpacing,
   redrawCores,
-  drawCoresOnCanvas,
 } from "./drawCanvas.js";
 
 import { loadDataAndDetermineParams } from "./data_processing.js";
@@ -36,36 +36,6 @@ const loadDependencies = async () => ({
 // Pure function to get input values
 const getInputValue = (inputId) => document.getElementById(inputId).value;
 
-// Function to process image
-const processImage = (
-  originalImage,
-  model,
-  threshold,
-  minArea,
-  maxArea,
-  disTransformMultiplier,
-  outputCanvas,
-  alpha = 0.3
-) => {
-  try {
-    runPipeline(
-      originalImage,
-      model,
-      threshold,
-      minArea,
-      maxArea,
-      disTransformMultiplier,
-      outputCanvas,
-      alpha = alpha
-    );
-  } catch (error) {
-    console.error('Error processing image:', error);
-  } finally {
-    // Hide loading spinner
-    document.getElementById('loadingSpinner').style.display = 'none';
-  }
-
-};
 
 // Event handler for file input change
 const handleFileInputChange = async (e, processCallback) => {
@@ -87,8 +57,6 @@ const handleFileInputChange = async (e, processCallback) => {
           "Image loaded successfully.",
           "success-message"
         );
-
-
         processCallback();
       };
 
@@ -166,7 +134,7 @@ const handleLoadImageUrlClick = (state) => {
             "Image loaded successfully.",
             "success-message"
           );
-          segmentImage();
+          await segmentImage();
         };
       })
       .catch(error => {
@@ -193,16 +161,31 @@ async function segmentImage() {
     originalImageContainer.src &&
     originalImageContainer.src[originalImageContainer.src.length - 1] !== "#"
   ) {
-    processImage(
-      originalImageContainer,
-      window.state.model,
-      threshold,
-      minArea,
-      maxArea,
-      disTransformMultiplier,
-      processedImageCanvas,
-      maskAlpha
-    );
+    try {
+
+      await runPipeline(
+        originalImageContainer,
+        window.state.model,
+        threshold,
+        minArea,
+        maxArea,
+        disTransformMultiplier,
+        processedImageCanvas,
+        maskAlpha
+      );
+
+      window.cores = preprocessCores(window.properties);
+
+      preprocessForTravelingAlgorithm(originalImageContainer);
+
+    } catch (error) {
+      console.error('Error processing image:', error);
+    } finally {
+      // Hide loading spinner
+      document.getElementById('loadingSpinner').style.display = 'none';
+    }
+
+
   }
 }
 
@@ -374,37 +357,19 @@ const initSegmentation = async () => {
       URL.revokeObjectURL(url);
     });
 
+
+
   document
     .getElementById("applySegmentation")
-    .addEventListener("click", function () {
+    .addEventListener("click", async function () {
       // Assuming `properties` is the variable holding your segmentation results
       if (!window.properties) {
         alert("No image uploaded!");
         return;
       }
 
-      segmentImage();
-
-
-      loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
-
-      const xOffsetValue = document.getElementById("xOffsetValue");
-      const xOffset = document.getElementById("xOffset");
-      xOffset.value = window.preprocessingData.minX;
-      xOffsetValue.value = window.preprocessingData.minX; // Update the output element with the slider value
-
-      const yOffset = document.getElementById("yOffset");
-      const yOffsetValue = document.getElementById("yOffsetValue");
-      yOffsetValue.value = window.preprocessingData.minY; // Update the output element with the slider value
-      yOffset.value = window.preprocessingData.minY;
-
-      // If there's an image and cores data, draw the cores with the new radius
-      drawCoresOnCanvas(
-        originalImageContainer.src,
-        window.cores,
-        window.preprocessingData.minX,
-        window.preprocessingData.minY
-      );
+      await segmentImage();
+      preprocessForTravelingAlgorithm(originalImageContainer);
     });
 };
 

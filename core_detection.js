@@ -364,7 +364,6 @@ async function runPipeline(
   }
 
   window.properties = properties;
-  window.cores = preprocessCores(properties);
 
   // Visualize the predictions with the mask overlay and centroids
   await visualizePredictions(

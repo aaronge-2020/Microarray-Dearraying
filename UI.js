@@ -42,8 +42,6 @@ function getHyperparametersFromUI() {
   };
 }
 
-
-
 // Pure function to update HTML element properties
 const updateElementProperty = (element, property, value) => {
   element[property] = value;
