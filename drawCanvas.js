@@ -137,8 +137,8 @@ async function visualizeSegmentationResults(
   const mask = await tf.tidy(() => {
     const clippedPredictions = predictions.clipByValue(0, 1);
     const resizedPredictions = tf.image.resizeBilinear(clippedPredictions, [
-      height,
-      width,
+      1024,
+      1024,
     ]);
     const squeezedPredictions = resizedPredictions.squeeze();
     return squeezedPredictions.arraySync(); // Convert to a regular array for pixel manipulation

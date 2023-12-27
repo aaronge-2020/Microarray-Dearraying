@@ -42,38 +42,36 @@ async function loadModel(modelUrl) {
   }
 }
 
-
-
 function calculateCentroids(markers, minArea, maxArea) {
   let regions = {};
-  
+
   // Iterate through each pixel in the markers matrix
   for (let i = 0; i < markers.rows; i++) {
-      for (let j = 0; j < markers.cols; j++) {
-          let label = markers.intPtr(i, j)[0];
-          if (label === 0) continue; // Skip the background
+    for (let j = 0; j < markers.cols; j++) {
+      let label = markers.intPtr(i, j)[0];
+      if (label === 0) continue; // Skip the background
 
-          if (!(label in regions)) {
-              regions[label] = { xSum: 0, ySum: 0, count: 0 };
-          }
-
-          regions[label].xSum += j;
-          regions[label].ySum += i;
-          regions[label].count += 1;
+      if (!(label in regions)) {
+        regions[label] = { xSum: 0, ySum: 0, count: 0 };
       }
+
+      regions[label].xSum += j;
+      regions[label].ySum += i;
+      regions[label].count += 1;
+    }
   }
 
   let centroids = {};
   for (let label in regions) {
-      let region = regions[label];
-      let area = region.count;
-      if (area >= minArea && area <= maxArea) {
-          centroids[label] = {
-              x: region.xSum / area,
-              y: region.ySum / area, 
-              radius: Math.sqrt(area / Math.PI), // radius
-          };
-      }
+    let region = regions[label];
+    let area = region.count;
+    if (area >= minArea && area <= maxArea) {
+      centroids[label] = {
+        x: region.xSum / area,
+        y: region.ySum / area,
+        radius: Math.sqrt(area / Math.PI), // radius
+      };
+    }
   }
 
   return centroids;
@@ -92,26 +90,35 @@ function getMaxValue(mat) {
   return maxVal;
 }
 
+function segmentationAlgorithm(
+  data,
+  minArea,
+  maxArea,
+  disTransformMultiplier = 0.6
+) {
+  // Convert to grayscale if the image is not already
+  let gray = new cv.Mat();
+  if (data.channels() === 3 || data.channels() === 4) {
+    cv.cvtColor(data, gray, cv.COLOR_RGBA2GRAY, 0);
+  } else {
+    gray = src.clone();
+  }
 
-function segmentationAlgorithm(data, minArea, maxArea, disTransformMultiplier = 0.6) {
+  // Convert to binary image
+  let binary = new cv.Mat();
+  cv.threshold(gray, binary, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU);
 
-      // Convert to grayscale if the image is not already
-      let gray = new cv.Mat();
-      if (data.channels() === 3 || data.channels() === 4) {
-          cv.cvtColor(data, gray, cv.COLOR_RGBA2GRAY, 0);
-      } else {
-          gray = src.clone();
-      }
-  
-      // Convert to binary image
-      let binary = new cv.Mat();
-      cv.threshold(gray, binary, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU);
-
-      
   // Noise removal with opening
   let kernel = cv.Mat.ones(3, 3, cv.CV_8U);
   let opening = new cv.Mat();
-  cv.morphologyEx(binary, opening, cv.MORPH_OPEN, kernel, new cv.Point(-1, -1), 2);
+  cv.morphologyEx(
+    binary,
+    opening,
+    cv.MORPH_OPEN,
+    kernel,
+    new cv.Point(-1, -1),
+    2
+  );
 
   // Sure background area
   let sureBg = new cv.Mat();
@@ -136,15 +143,19 @@ function segmentationAlgorithm(data, minArea, maxArea, disTransformMultiplier = 
 
   // Add one to all labels so that sure background is not 0, but 1
   let markersAdjusted = new cv.Mat();
-  cv.add(markers, new cv.Mat(markers.rows, markers.cols, markers.type(), new cv.Scalar(1)), markersAdjusted);
+  cv.add(
+    markers,
+    new cv.Mat(markers.rows, markers.cols, markers.type(), new cv.Scalar(1)),
+    markersAdjusted
+  );
 
   // Now, mark the region of unknown with zero
   for (let i = 0; i < markersAdjusted.rows; i++) {
-      for (let j = 0; j < markersAdjusted.cols; j++) {
-          if (unknown.ucharAt(i, j) === 255) {
-              markersAdjusted.ucharPtr(i, j)[0] = 0;
-          }
+    for (let j = 0; j < markersAdjusted.cols; j++) {
+      if (unknown.ucharAt(i, j) === 255) {
+        markersAdjusted.ucharPtr(i, j)[0] = 0;
       }
+    }
   }
 
   // Calculate properties for each region
@@ -162,20 +173,66 @@ function segmentationAlgorithm(data, minArea, maxArea, disTransformMultiplier = 
   return properties;
 }
 
-// Preprocess and predict function
-async function preprocessAndPredict(imageElement, model) {
-  // Create a canvas to manipulate the image
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  canvas.width = 512;
-  canvas.height = 512;
+// // Preprocess and predict function
+// async function preprocessAndPredict(imageElement, model) {
+//   // Create a canvas to manipulate the image
+//   const canvas = document.createElement("canvas");
+//   const ctx = canvas.getContext("2d");
+//   canvas.width = 512;
+//   canvas.height = 512;
 
-  // Draw the image onto the canvas and resize it
-  ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+//   // Draw the image onto the canvas and resize it
+//   ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+
+//   // Convert the image data to a TensorFlow Tensor and normalize it
+//   let tensor = tf.browser
+//     .fromPixels(canvas)
+//     .toFloat()
+//     .div(tf.scalar(255))
+//     .expandDims(); // Add the batch dimension
+
+//   // Predict the mask from the model
+//   const predictions = await model.predict(tensor);
+
+//   // Dispose of the tensor to free memory
+//   // tensor.dispose();
+
+//   // Return the predictions Tensor for further processing
+//   return predictions;
+// }
+
+async function preprocessAndPredict(imageElement, model) {
+  // Original image dimensions
+  const originalWidth = imageElement.width;
+  const originalHeight = imageElement.height;
+
+    // Calculate scale factors
+    const scaleX = 1024 / originalWidth;
+    const scaleY = 1024 / originalHeight;
+
+  // Create a canvas for padding and resizing
+  const canvasPad = document.createElement("canvas");
+  const ctxPad = canvasPad.getContext("2d");
+  
+  // Set canvas size to the padded size (1024x1024)
+  canvasPad.width = 1024;
+  canvasPad.height = 1024;
+
+  // Draw the original image on the top-left corner of the canvas
+  ctxPad.drawImage(imageElement, 0, 0, originalWidth, originalHeight);
+
+  // Create another canvas for the resized image
+  const canvasResize = document.createElement("canvas");
+  const ctxResize = canvasResize.getContext("2d");
+  canvasResize.width = 512;
+  canvasResize.height = 512;
+
+  // Draw the padded image onto the second canvas, resizing it
+  ctxResize.drawImage(canvasPad, 0, 0, canvasResize.width, canvasResize.height);
 
   // Convert the image data to a TensorFlow Tensor and normalize it
   let tensor = tf.browser
-    .fromPixels(canvas)
+    .fromPixels(canvasResize)
     .toFloat()
     .div(tf.scalar(255))
     .expandDims(); // Add the batch dimension
@@ -183,13 +240,18 @@ async function preprocessAndPredict(imageElement, model) {
   // Predict the mask from the model
   const predictions = await model.predict(tensor);
 
+  // Resize the predictions to scale them back to the original image dimensions
+  const scaledPredictions = tf.image.resizeBilinear(predictions, [
+    Math.ceil(predictions.shape[1] * scaleY),
+    Math.ceil(predictions.shape[2] * scaleX)
+  ]);
+
   // Dispose of the tensor to free memory
-  // tensor.dispose();
+  tensor.dispose();
 
-  // Return the predictions Tensor for further processing
-  return predictions;
+  // Return the scaled predictions Tensor for further processing
+  return scaledPredictions;
 }
-
 
 // Function to apply the threshold to the predictions
 function applyThreshold(predictions, threshold) {
@@ -226,7 +288,7 @@ async function runPipeline(
   maxArea,
   disTransformMultiplier,
   visualizationContainer,
-  maskAlpha=0.3,
+  maskAlpha = 0.3
 ) {
   // Preprocess the image and predict
   const predictions = await preprocessAndPredict(imageElement, model);
@@ -255,14 +317,13 @@ async function runPipeline(
   window.properties = Object.values(properties);
   window.thresholdedPredictions = thresholdedPredictions;
 
-
   // Visualize the predictions with the mask overlay and centroids
   await visualizeSegmentationResults(
     imageElement,
     thresholdedPredictions,
     properties,
     visualizationContainer,
-    maskAlpha,
+    maskAlpha
   );
 }
 
