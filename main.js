@@ -17,7 +17,6 @@ import {
   applyAndVisualize,
   updateVirtualGridSpacing,
   redrawCoresForTravelingAlgorithm,
-  drawCoresOnCanvasForTravelingAlgorithm,
 } from "./drawCanvas.js";
 
 import { loadDataAndDetermineParams } from "./data_processing.js";
@@ -369,6 +368,7 @@ const initSegmentation = async () => {
         return;
       }
 
+      window.actionHistory = [];
       await segmentImage();
       // preprocessForTravelingAlgorithm(originalImageContainer);
     });

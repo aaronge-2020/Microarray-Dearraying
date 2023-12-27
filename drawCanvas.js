@@ -38,7 +38,10 @@ function removeCore(x, y) {
 // Function to record actions for undo/redo
 function recordAction(action) {
   if (currentActionIndex < window.actionHistory.length - 1) {
-    window.actionHistory = window.actionHistory.slice(0, currentActionIndex + 1);
+    window.actionHistory = window.actionHistory.slice(
+      0,
+      currentActionIndex + 1
+    );
   }
   window.actionHistory.push(action);
   currentActionIndex++;
@@ -136,10 +139,10 @@ async function visualizeSegmentationResults(
   // Process predictions and draw the mask on top of the original image
   const mask = await tf.tidy(() => {
     const clippedPredictions = predictions.clipByValue(0, 1);
-    const resizedPredictions = tf.image.resizeBilinear(clippedPredictions, [
-      1024,
-      1024,
-    ]);
+    const resizedPredictions = tf.image.resizeBilinear(
+      clippedPredictions,
+      [1024, 1024]
+    );
     const squeezedPredictions = resizedPredictions.squeeze();
     return squeezedPredictions.arraySync(); // Convert to a regular array for pixel manipulation
   });
@@ -187,17 +190,28 @@ async function visualizeSegmentationResults(
     }
   });
 
-  document.getElementById('undoButton').addEventListener('click', function() {
-    // Undo action here
-    undo();
+  document
+    .getElementById("undoButton")
+    .addEventListener("mousedown", function () {
+      // Undo action here
 
-});
+      const currentTime = Date.now();
+      if (currentTime - lastActionTime > actionDebounceInterval) {
+        undo();
+      }
+      lastActionTime = currentTime;
+    });
 
-document.getElementById('redoButton').addEventListener('click', function() {
-    // Redo action here
-    redo();
-
-});
+  document
+    .getElementById("redoButton")
+    .addEventListener("mousedown", function () {
+      // Redo action here
+      const currentTime = Date.now();
+      if (currentTime - lastActionTime > actionDebounceInterval) {
+        redo();
+      }
+      lastActionTime = currentTime;
+    });
 }
 
 function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
