@@ -6,6 +6,7 @@ import {
   updateSliderUIText,
   updateStatusMessage,
   resetApplication,
+  getHyperparametersFromUI
 } from "./UI.js";
 
 import { saveUpdatedCores, preprocessForTravelingAlgorithm } from "./data_processing.js";
@@ -15,7 +16,8 @@ import { preprocessCores } from "./delaunay_triangulation.js";
 import {
   applyAndVisualize,
   updateVirtualGridSpacing,
-  redrawCores,
+  redrawCoresForTravelingAlgorithm,
+  drawCoresOnCanvasForTravelingAlgorithm,
 } from "./drawCanvas.js";
 
 import { loadDataAndDetermineParams } from "./data_processing.js";
@@ -24,7 +26,7 @@ import { loadModel, runPipeline, loadOpenCV } from "./core_detection.js";
 
 // Initialize image elements
 const originalImageContainer = document.getElementById("originalImage");
-const processedImageCanvas = document.getElementById("processedImage");
+const processedImageCanvasID = "segmentationResultsCanvas"
 
 
 // Load dependencies and return updated state
@@ -170,13 +172,13 @@ async function segmentImage() {
         minArea,
         maxArea,
         disTransformMultiplier,
-        processedImageCanvas,
+        processedImageCanvasID,
         maskAlpha
       );
 
       window.cores = preprocessCores(window.properties);
 
-      preprocessForTravelingAlgorithm(originalImageContainer);
+      // preprocessForTravelingAlgorithm(originalImageContainer);
 
     } catch (error) {
       console.error('Error processing image:', error);
@@ -184,7 +186,6 @@ async function segmentImage() {
       // Hide loading spinner
       document.getElementById('loadingSpinner').style.display = 'none';
     }
-
 
   }
 }
@@ -295,7 +296,7 @@ function bindEventListeners() {
     const imageFile = document.getElementById("fileInput").files[0];
     if ((imageFile || window.loadedImg) && window.cores) {
       // If there's an image and cores data, draw the cores with the new radius
-      redrawCores();
+      redrawCoresForTravelingAlgorithm();
     } else {
       alert("Please load an image and JSON file first.");
     }
@@ -305,14 +306,14 @@ function bindEventListeners() {
   document.getElementById("xOffset").addEventListener("input", function () {
     const xOffsetValue = document.getElementById("xOffsetValue");
     xOffsetValue.value = this.value; // Update the output element with the slider value
-    redrawCores(); // Redraw cores with new offsets
+    redrawCoresForTravelingAlgorithm(); // Redraw cores with new offsets
   });
 
   // Event listener for Y Offset Slider
   document.getElementById("yOffset").addEventListener("input", function () {
     const yOffsetValue = document.getElementById("yOffsetValue");
     yOffsetValue.value = this.value; // Update the output element with the slider value
-    redrawCores(); // Redraw cores with new offsets
+    redrawCoresForTravelingAlgorithm(); // Redraw cores with new offsets
   });
 }
 
@@ -359,7 +360,7 @@ const initSegmentation = async () => {
 
 
 
-  document
+    document
     .getElementById("applySegmentation")
     .addEventListener("click", async function () {
       // Assuming `properties` is the variable holding your segmentation results
@@ -369,6 +370,18 @@ const initSegmentation = async () => {
       }
 
       await segmentImage();
+      // preprocessForTravelingAlgorithm(originalImageContainer);
+    });
+
+    document
+    .getElementById("finalizeSegmentation")
+    .addEventListener("click", async function () {
+      // Assuming `properties` is the variable holding your segmentation results
+      if (!window.properties) {
+        alert("No image uploaded!");
+        return;
+      }
+
       preprocessForTravelingAlgorithm(originalImageContainer);
     });
 };

@@ -11,7 +11,7 @@ import {
     traveling_algorithm,
   } from "./delaunay_triangulation.js";
 
-  import { drawCoresOnCanvas } from "./drawCanvas.js";
+  import { drawCoresOnCanvasForTravelingAlgorithm } from "./drawCanvas.js";
 
   import { getHyperparametersFromUI } from "./UI.js";
 
@@ -42,7 +42,7 @@ function rotatePoint(point, angle) {
     yOffset.value = window.preprocessingData.minY;
 
     // If there's an image and cores data, draw the cores with the new radius
-    drawCoresOnCanvas(
+    drawCoresOnCanvasForTravelingAlgorithm(
       originalImageContainer.src,
       window.cores,
       window.preprocessingData.minX,

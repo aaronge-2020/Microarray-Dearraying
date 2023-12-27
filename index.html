@@ -43,7 +43,7 @@
                     <br>
                     <label for="imageUrlInput">Paste in Image URL:</label>
                     <input type="text" id="imageUrlInput" placeholder="Enter Image URL"
-                        value="https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_Padded_PNGs/158871.png" />
+                        value="https://aaronge-2020.github.io/Microarray-Dearraying/TMA_WSI_PNGs/158871.png" />
                     <button id="loadImageUrlBtn" type="button" class="load-img-btn">Load Image</button>
                     <br>
                 </div>
@@ -71,11 +71,13 @@
                         <input type="number" id="maxAreaInput" value="500" step="1" min="1" />
 
                         <label for="disTransformMultiplierInput">Distance Transform Multiplier:</label>
-                        <input type="number" id="disTransformMultiplierInput" value="0.5" step="0.1" min="0.1"
+                        <input type="number" id="disTransformMultiplierInput" value="0.5" step="0.025" min="0.1"
                             max="1" />
                     </fieldset>
 
                     <button type="button" id="applySegmentation">Apply Segmentation</button>
+                    <button type="button" id="finalizeSegmentation">Finalize Segmentation</button>
+
                     <br>
                 </div>
 
@@ -252,10 +254,15 @@
             <div id="ImageSegmentation" class="tabcontent">
                 <img id="originalImage" src="#" alt="Original Tissue" style="display: none;">
 
-                <img id="processedImage" src="./TMA_WSI_PNGs/158868.png" alt="Processed Tissue">
+                <canvas id="segmentationResultsCanvas" alt="Processed Tissue">
 
                 <div id="loadingSpinner" style="display: none;">
                     <div class="spinner"></div>
+                </div>
+
+                <div id="buttonContainer">
+                    <button id="undoButton" class="actionButton">Undo</button>
+                    <button id="redoButton" class="actionButton">Redo</button>
                 </div>
             </div>
 

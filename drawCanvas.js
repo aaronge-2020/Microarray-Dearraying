@@ -1,7 +1,206 @@
 import { getHyperparametersFromUI } from "./UI.js";
 import { runTravelingAlgorithm } from "./data_processing.js";
 
-function drawCoresOnCanvas(imageSrc, coresData) {
+import { preprocessCores } from "./delaunay_triangulation.js";
+
+import * as tf from "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.14.0/+esm";
+let lastActionTime = 0;
+const actionDebounceInterval = 300; // milliseconds
+
+// Pure function to get input values
+const getInputValue = (inputId) => document.getElementById(inputId).value;
+
+// Global variables to hold the history for undo and redo
+window.actionHistory = [];
+let currentActionIndex = -1;
+
+// Function to add a core
+function addCore(x, y) {
+  const newCore = { x, y, radius: 4 }; // Set defaultRadius as needed
+  window.properties.push(newCore);
+  window.cores = preprocessCores(window.properties);
+  recordAction({ type: "add", core: newCore });
+  redrawCanvas();
+}
+
+// Function to remove the nearest core
+function removeCore(x, y) {
+  const indexToRemove = findNearestCoreIndex(x, y);
+  if (indexToRemove !== -1) {
+    const removedCore = window.properties.splice(indexToRemove, 1)[0];
+    window.cores = preprocessCores(window.properties);
+
+    recordAction({ type: "remove", core: removedCore });
+    redrawCanvas();
+  }
+}
+
+// Function to record actions for undo/redo
+function recordAction(action) {
+  if (currentActionIndex < window.actionHistory.length - 1) {
+    window.actionHistory = window.actionHistory.slice(0, currentActionIndex + 1);
+  }
+  window.actionHistory.push(action);
+  currentActionIndex++;
+}
+
+// Undo and Redo Functions
+function undo() {
+  if (currentActionIndex >= 0) {
+    const action = window.actionHistory[currentActionIndex];
+    revertAction(action);
+    currentActionIndex--;
+    redrawCanvas();
+  }
+}
+
+function redo() {
+  if (currentActionIndex < window.actionHistory.length - 1) {
+    currentActionIndex++;
+    const action = window.actionHistory[currentActionIndex];
+    applyAction(action);
+    redrawCanvas();
+  }
+}
+
+// Helper functions to revert or apply actions
+function revertAction(action) {
+  if (action.type === "add") {
+    window.properties.pop();
+  } else if (action.type === "remove") {
+    window.properties.push(action.core);
+  }
+}
+
+function applyAction(action) {
+  if (action.type === "add") {
+    window.properties.push(action.core);
+  } else if (action.type === "remove") {
+    const indexToRemove = findNearestCoreIndex(action.core.x, action.core.y);
+    if (indexToRemove !== -1) {
+      window.properties.splice(indexToRemove, 1);
+    }
+  }
+}
+
+// Utility function to redraw the canvas
+function redrawCanvas() {
+  const maskAlpha = parseFloat(getInputValue("maskAlphaSlider"));
+
+  const originalImageContainer = document.getElementById("originalImage");
+
+  visualizeSegmentationResults(
+    // Pass the necessary arguments like original image, predictions, etc.
+    originalImageContainer,
+    window.thresholdedPredictions,
+    window.properties,
+    "segmentationResultsCanvas",
+    maskAlpha
+  );
+}
+
+// Function to find the nearest core index
+function findNearestCoreIndex(x, y) {
+  let nearestIndex = -1;
+  let minDistance = Infinity;
+  window.properties.forEach((core, index) => {
+    const distance = Math.sqrt((core.x - x) ** 2 + (core.y - y) ** 2);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestIndex = index;
+    }
+  });
+  return nearestIndex;
+}
+
+// Visualization function
+async function visualizeSegmentationResults(
+  originalImage,
+  predictions,
+  properties,
+  canvasID,
+  alpha = 0.3
+) {
+  const [width, height] = [
+    originalImage.naturalWidth,
+    originalImage.naturalHeight,
+  ];
+  const canvas = document.getElementById(canvasID);
+  const ctx = canvas.getContext("2d");
+  canvas.width = width;
+  canvas.height = height;
+
+  // Draw the original image onto the canvas
+  ctx.drawImage(originalImage, 0, 0, width, height);
+
+  // Process predictions and draw the mask on top of the original image
+  const mask = await tf.tidy(() => {
+    const clippedPredictions = predictions.clipByValue(0, 1);
+    const resizedPredictions = tf.image.resizeBilinear(clippedPredictions, [
+      height,
+      width,
+    ]);
+    const squeezedPredictions = resizedPredictions.squeeze();
+    return squeezedPredictions.arraySync(); // Convert to a regular array for pixel manipulation
+  });
+
+  // Draw the mask with semi-transparency
+  ctx.globalAlpha = alpha;
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      const maskValue = mask[i][j];
+      if (maskValue > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${maskValue})`;
+        ctx.fillRect(j, i, 1, 1);
+      }
+    }
+  }
+  ctx.globalAlpha = 1.0;
+
+  // Draw a red dot at each centroid
+  // Ensure properties is an array before using forEach
+  if (properties && typeof properties === "object") {
+    properties = Object.values(properties); // Convert object to array if necessary
+  }
+
+  properties.forEach((prop) => {
+    ctx.beginPath();
+    ctx.arc(prop.x, prop.y, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = "blue";
+    ctx.fill();
+  });
+
+  // Since we used arraySync, we're responsible for disposing of the predictions tensor
+  // predictions.dispose();
+
+  // Event listener for canvas clicks to add/remove cores
+  canvas.addEventListener("mousedown", (event) => {
+    const currentTime = Date.now();
+    if (currentTime - lastActionTime > actionDebounceInterval) {
+      const { offsetX, offsetY } = event;
+      if (event.shiftKey) {
+        removeCore(offsetX, offsetY);
+      } else {
+        addCore(offsetX, offsetY);
+      }
+      lastActionTime = currentTime;
+    }
+  });
+
+  document.getElementById('undoButton').addEventListener('click', function() {
+    // Undo action here
+    undo();
+
+});
+
+document.getElementById('redoButton').addEventListener('click', function() {
+    // Redo action here
+    redo();
+
+});
+}
+
+function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
   const img = new Image();
   img.src = imageSrc;
 
@@ -70,7 +269,7 @@ async function applyAndVisualize() {
       ? URL.createObjectURL(document.getElementById("fileInput").files[0])
       : "path/to/default/image.jpg";
 
-    drawCoresOnCanvas(imageSrc, window.cores);
+    drawCoresOnCanvasForTravelingAlgorithm(imageSrc, window.cores);
 
     const horizontalSpacing = parseInt(
       document.getElementById("horizontalSpacing").value,
@@ -177,53 +376,59 @@ function createVirtualGrid(
   };
 }
 function updateVirtualGridSpacing(
+  horizontalSpacing,
+  verticalSpacing,
+  startingX,
+  startingY
+) {
+  const virtualGridCanvas = document.getElementById("virtualGridCanvas");
+  const vctx = virtualGridCanvas.getContext("2d");
+  // Use the loaded image if available, otherwise use default or file input image
+  const imageSrc = window.loadedImg
+    ? window.loadedImg.src
+    : document.getElementById("fileInput").files.length > 0
+    ? URL.createObjectURL(document.getElementById("fileInput").files[0])
+    : "path/to/default/image.jpg";
+
+  // Clear the existing grid
+  vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
+
+  // Redraw the grid with new spacings
+  createVirtualGrid(
+    imageSrc,
+    window.sortedCoresData,
     horizontalSpacing,
     verticalSpacing,
     startingX,
     startingY
-  ) {
-    const virtualGridCanvas = document.getElementById("virtualGridCanvas");
-    const vctx = virtualGridCanvas.getContext("2d");
-    // Use the loaded image if available, otherwise use default or file input image
-    const imageSrc = window.loadedImg
-      ? window.loadedImg.src
-      : document.getElementById("fileInput").files.length > 0
-      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
-      : "path/to/default/image.jpg";
-  
-    // Clear the existing grid
-    vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
-  
-    // Redraw the grid with new spacings
-    createVirtualGrid(
-      imageSrc,
-      window.sortedCoresData,
-      horizontalSpacing,
-      verticalSpacing,
-      startingX,
-      startingY
-    );
-  }
-  
-// Function to redraw the cores on the canvas
-function redrawCores() {
-    const imageFile = document.getElementById("fileInput").files[0];
-    if ((imageFile || window.loadedImg) && window.cores) {
-      if (window.loadedImg) {
-        drawCoresOnCanvas(window.loadedImg.src, window.cores);
-      } else {
-        drawCoresOnCanvas(URL.createObjectURL(imageFile), window.cores);
-      }
-    } else {
-      alert("Please load an image and JSON file first.");
-    }
-  }
-  
+  );
+}
 
-  export{
-    drawCoresOnCanvas,
-    applyAndVisualize,
-    createVirtualGrid,
-    updateVirtualGridSpacing,
-    redrawCores
+// Function to redraw the cores on the canvas
+function redrawCoresForTravelingAlgorithm() {
+  const imageFile = document.getElementById("fileInput").files[0];
+  if ((imageFile || window.loadedImg) && window.cores) {
+    if (window.loadedImg) {
+      drawCoresOnCanvasForTravelingAlgorithm(
+        window.loadedImg.src,
+        window.cores
+      );
+    } else {
+      drawCoresOnCanvasForTravelingAlgorithm(
+        URL.createObjectURL(imageFile),
+        window.cores
+      );
+    }
+  } else {
+    alert("Please load an image first.");
   }
+}
+
+export {
+  drawCoresOnCanvasForTravelingAlgorithm,
+  applyAndVisualize,
+  createVirtualGrid,
+  updateVirtualGridSpacing,
+  redrawCoresForTravelingAlgorithm,
+  visualizeSegmentationResults,
+};
