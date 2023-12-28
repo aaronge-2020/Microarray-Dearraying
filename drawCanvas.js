@@ -18,7 +18,7 @@ let currentActionIndex = -1;
 function addCore(x, y) {
   const newCore = { x, y, radius: 4 }; // Set defaultRadius as needed
   window.properties.push(newCore);
-  window.cores = preprocessCores(window.properties);
+  window.preprocessedCores = preprocessCores(window.properties);
   recordAction({ type: "add", core: newCore });
   redrawCanvas();
 }
@@ -28,7 +28,7 @@ function removeCore(x, y) {
   const indexToRemove = findNearestCoreIndex(x, y);
   if (indexToRemove !== -1) {
     const removedCore = window.properties.splice(indexToRemove, 1)[0];
-    window.cores = preprocessCores(window.properties);
+    window.preprocessedCores = preprocessCores(window.properties);
 
     recordAction({ type: "remove", core: removedCore });
     redrawCanvas();
@@ -214,67 +214,146 @@ async function visualizeSegmentationResults(
     });
 }
 
+// function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
+//   const img = new Image();
+//   img.src = imageSrc;
+
+//   img.onload = () => {
+//     const canvas = document.getElementById("coreCanvas");
+//     const ctx = canvas.getContext("2d");
+//     ctx.clearRect(0, 0, canvas.width, canvas.height);
+//     ctx.drawImage(img, 0, 0, img.width, img.height);
+
+//     const userRadius = parseInt(document.getElementById("userRadius").value);
+//     const xOffset = parseInt(document.getElementById("xOffset").value);
+//     const yOffset = parseInt(document.getElementById("yOffset").value);
+
+//     if (window.sortedCoresData && window.sortedCoresData.length > 0) {
+//       // Process sorted data and draw circles with row/col information
+//       window.sortedCoresData.forEach((sortedCore) => {
+//         ctx.beginPath();
+//         ctx.arc(
+//           sortedCore.x + xOffset,
+//           sortedCore.y + yOffset,
+//           userRadius,
+//           0,
+//           Math.PI * 2
+//         );
+//         ctx.lineWidth = 2;
+
+//         // Check if the core is imaginary and set the color accordingly
+//         if (sortedCore.isImaginary) {
+//           ctx.strokeStyle = "orange";
+//         } else {
+//           ctx.strokeStyle = "red";
+//         }
+
+//         ctx.stroke();
+
+//         // Draw row/col information
+//         ctx.fillStyle = "blue"; // Text color
+//         ctx.font = "10px Arial"; // Text font and size
+//         ctx.fillText(
+//           `(${sortedCore.row + 1},${sortedCore.col + 1})`,
+//           sortedCore.x + xOffset - userRadius + 2,
+//           sortedCore.y + yOffset
+//         );
+//       });
+//     } else {
+//       // Draw only red circles for real cores if sorted data is not available
+//       coresData.forEach((core) => {
+//         ctx.beginPath();
+//         ctx.arc(core.x + xOffset, core.y + yOffset, userRadius, 0, Math.PI * 2);
+//         ctx.strokeStyle = "red";
+//         ctx.lineWidth = 2;
+//         ctx.stroke();
+//       });
+//     }
+//   };
+// }
+
+
+// Updated applyAndVisualize function
+
+
 function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
   const img = new Image();
   img.src = imageSrc;
+  const canvas = document.getElementById("coreCanvas");
+  const ctx = canvas.getContext("2d");
+  let selectedCore = null;
+  let isDragging = false;
+
 
   img.onload = () => {
-    const canvas = document.getElementById("coreCanvas");
-    const ctx = canvas.getContext("2d");
+    drawCores();
+  };
+
+  function drawCores() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, img.width, img.height);
+    window.sortedCoresData.forEach(drawCore);
+  }
 
-    const userRadius = parseInt(document.getElementById("userRadius").value);
-    const xOffset = parseInt(document.getElementById("xOffset").value);
-    const yOffset = parseInt(document.getElementById("yOffset").value);
+  function drawCore(core) {
+    ctx.beginPath();
+    ctx.arc(core.x , core.y , core.defaultRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = core.isImaginary ? "orange" : "red";
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    if (window.sortedCoresData && window.sortedCoresData.length > 0) {
-      // Process sorted data and draw circles with row/col information
-      window.sortedCoresData.forEach((sortedCore) => {
-        ctx.beginPath();
-        ctx.arc(
-          sortedCore.x + xOffset,
-          sortedCore.y + yOffset,
-          userRadius,
-          0,
-          Math.PI * 2
-        );
-        ctx.lineWidth = 2;
+    ctx.fillStyle = "blue";
+    ctx.font = "10px Arial";
+    ctx.fillText(`(${core.row},${core.col})`, core.x - core.defaultRadius + 2 , core.y );
+  }
 
-        // Check if the core is imaginary and set the color accordingly
-        if (sortedCore.isImaginary) {
-          ctx.strokeStyle = "orange";
-        } else {
-          ctx.strokeStyle = "red";
-        }
+  canvas.addEventListener("mousedown", (event) => {
 
-        ctx.stroke();
+    const mouseX = event.offsetX;
+    const mouseY = event.offsetY;
+    selectedCore = window.sortedCoresData.find(core => 
+      Math.sqrt(((core.x ) - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.defaultRadius
+    );
 
-        // Draw row/col information
-        ctx.fillStyle = "blue"; // Text color
-        ctx.font = "10px Arial"; // Text font and size
-        ctx.fillText(
-          `(${sortedCore.row + 1},${sortedCore.col + 1})`,
-          sortedCore.x + xOffset - userRadius + 2,
-          sortedCore.y + yOffset
-        );
-      });
-    } else {
-      // Draw only red circles for real cores if sorted data is not available
-      coresData.forEach((core) => {
-        ctx.beginPath();
-        ctx.arc(core.x + xOffset, core.y + yOffset, userRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      });
+    if (selectedCore) {
+      isDragging = true;
     }
-  };
+  });
+
+  canvas.addEventListener("mousemove", (event) => {
+    if (!isDragging || !selectedCore) return;
+
+    selectedCore.x = event.offsetX;
+    selectedCore.y = event.offsetY;
+    drawCores();
+  });
+
+  canvas.addEventListener("mouseup", () => {
+    isDragging = false;
+    selectedCore = null;
+  });
 }
-// Updated applyAndVisualize function
+
+function updateCoreProperties(coreIndex, newProperties) {
+  const core = window.sortedCoresData[coreIndex];
+  if (!core) return;
+
+  Object.assign(core, newProperties);
+  // Use the loaded image if available, otherwise use default or file input image
+  const imageSrc = window.loadedImg
+  ? window.loadedImg.src
+  : document.getElementById("fileInput").files.length > 0
+  ? URL.createObjectURL(document.getElementById("fileInput").files[0])
+  : "path/to/default/image.jpg";
+
+    drawCoresOnCanvasForTravelingAlgorithm(imageSrc, window.sortedCoresData);
+}
+
+
+
 async function applyAndVisualize() {
-  if (window.cores) {
-    await runTravelingAlgorithm(window.cores, getHyperparametersFromUI());
+  if (window.preprocessedCores) {
+    await runTravelingAlgorithm(window.preprocessedCores, getHyperparametersFromUI());
 
     // Use the loaded image if available, otherwise use default or file input image
     const imageSrc = window.loadedImg
@@ -283,7 +362,7 @@ async function applyAndVisualize() {
       ? URL.createObjectURL(document.getElementById("fileInput").files[0])
       : "path/to/default/image.jpg";
 
-    drawCoresOnCanvasForTravelingAlgorithm(imageSrc, window.cores);
+    drawCoresOnCanvasForTravelingAlgorithm(imageSrc, window.sortedCoresData);
 
     const horizontalSpacing = parseInt(
       document.getElementById("horizontalSpacing").value,
@@ -341,8 +420,6 @@ function createVirtualGrid(
     vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
 
     sortedCoresData.forEach((core) => {
-      const xOffset = parseInt(document.getElementById("xOffset").value);
-      const yOffset = parseInt(document.getElementById("yOffset").value);
       const idealX = startingX + core.col * horizontalSpacing;
       const idealY = startingY + core.row * verticalSpacing;
 
@@ -358,8 +435,8 @@ function createVirtualGrid(
 
       vctx.clip();
 
-      const sourceX = core.x + xOffset - userRadius;
-      const sourceY = core.y + yOffset - userRadius;
+      const sourceX = core.x + window.preprocessingData.minX - userRadius;
+      const sourceY = core.y + window.preprocessingData.minY - userRadius;
 
       vctx.drawImage(
         img,
@@ -421,16 +498,16 @@ function updateVirtualGridSpacing(
 // Function to redraw the cores on the canvas
 function redrawCoresForTravelingAlgorithm() {
   const imageFile = document.getElementById("fileInput").files[0];
-  if ((imageFile || window.loadedImg) && window.cores) {
+  if ((imageFile || window.loadedImg) && window.preprocessedCores) {
     if (window.loadedImg) {
       drawCoresOnCanvasForTravelingAlgorithm(
         window.loadedImg.src,
-        window.cores
+        window.preprocessedCores
       );
     } else {
       drawCoresOnCanvasForTravelingAlgorithm(
         URL.createObjectURL(imageFile),
-        window.cores
+        window.preprocessedCores
       );
     }
   } else {

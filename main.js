@@ -175,7 +175,7 @@ async function segmentImage() {
         maskAlpha
       );
 
-      window.cores = preprocessCores(window.properties);
+      window.preprocessedCores = preprocessCores(window.properties);
 
       // preprocessForTravelingAlgorithm(originalImageContainer);
 
@@ -293,26 +293,18 @@ function bindEventListeners() {
     radiusValue.value = userRadius; // Update the output element with the slider value
 
     const imageFile = document.getElementById("fileInput").files[0];
-    if ((imageFile || window.loadedImg) && window.cores) {
+    if ((imageFile || window.loadedImg) && window.preprocessedCores) {
       // If there's an image and cores data, draw the cores with the new radius
       redrawCoresForTravelingAlgorithm();
+
+      // Change the defaultRadius value of each core in window.sortedCores to the new radius
+      window.sortedCoresData.forEach((core) => {
+        core.defaultRadius = parseInt(userRadius);
+      });
+
     } else {
       alert("Please load an image and JSON file first.");
     }
-  });
-
-  // Event listener for X Offset Slider
-  document.getElementById("xOffset").addEventListener("input", function () {
-    const xOffsetValue = document.getElementById("xOffsetValue");
-    xOffsetValue.value = this.value; // Update the output element with the slider value
-    redrawCoresForTravelingAlgorithm(); // Redraw cores with new offsets
-  });
-
-  // Event listener for Y Offset Slider
-  document.getElementById("yOffset").addEventListener("input", function () {
-    const yOffsetValue = document.getElementById("yOffsetValue");
-    yOffsetValue.value = this.value; // Update the output element with the slider value
-    redrawCoresForTravelingAlgorithm(); // Redraw cores with new offsets
   });
 }
 

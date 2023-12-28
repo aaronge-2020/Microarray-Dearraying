@@ -4,29 +4,6 @@ import * as math from "https://esm.sh/mathjs@12.2.0";
 
 import * as Plotly from "https://cdn.jsdelivr.net/npm/plotly.js-dist/+esm";
 
-// function preprocessCores(cores) {
-//   // If cores is an object, convert it to an array
-//   if (typeof cores === "object" && !Array.isArray(cores)) {
-//     cores = Object.values(cores);
-//   }
-
-//   const minX = Math.min(...cores.map((core) => core.x));
-//   const minY = Math.min(...cores.map((core) => core.y));
-
-//   window.preprocessingData = {
-//     minX,
-//     minY,
-//   };
-
-//   // Normalize the coordinates
-//   return cores.map((core) => {
-//     // Perform the transformation
-//     core.x = core.x - minX;
-//     core.y = core.y - minY;
-
-//     return core;
-//   });
-// }
 
 function preprocessCores(cores) {
   // If cores is an object, convert it to an array
@@ -414,83 +391,6 @@ function sortEdgesAndAddIsolatedPoints(bestEdgeSet, normalizedCoordinates) {
   return bestEdgeSetIndices;
 }
 
-function visualizeSortedRows(rows, plotDivId, minX, minY) {
-  // Prepare the data for Plotly
-  let realPoints = {
-    x: [],
-    y: [],
-    type: "scatter",
-    mode: "markers",
-    name: "Real Points",
-    marker: { color: "blue" },
-    text: [],
-    hoverinfo: "text",
-    hovertemplate: "%{text}",
-  };
-  let imaginaryPoints = {
-    x: [],
-    y: [],
-    type: "scatter",
-    mode: "markers",
-    name: "Imaginary Points",
-    marker: { color: "red" },
-    text: [],
-    hoverinfo: "text",
-    hovertemplate: "%{text}",
-  };
-
-  window.finalCores = [];
-
-  rows.forEach((row, rowIdx) => {
-    row.forEach((pointInfo, colIdx) => {
-      const x = pointInfo.point[0] + minX;
-      const y = pointInfo.point[1] + minY;
-      const hoverText = `Row: ${rowIdx}, Col: ${colIdx}, X: ${x.toFixed(
-        2
-      )}, Y: ${y.toFixed(2)}`;
-
-      if (pointInfo.isImaginary) {
-        imaginaryPoints.x.push(x);
-        imaginaryPoints.y.push(-y);
-        imaginaryPoints.text.push(hoverText);
-      } else {
-        // Use original coordinates
-
-        realPoints.x.push(x);
-        realPoints.y.push(-y);
-        realPoints.text.push(hoverText);
-      }
-
-      // Save final results to window.finalCores
-      window.finalCores.push({
-        row: rowIdx,
-        col: colIdx,
-        x: x,
-        y: y,
-        isImaginary: pointInfo.isImaginary,
-      });
-    });
-  });
-
-  // Define layout for the plot
-  const layout = {
-    title: "Sorted Rows Visualization",
-    xaxis: {
-      title: "X coordinate",
-    },
-    yaxis: {
-      title: "Y coordinate",
-    },
-    hovermode: "closest", // Display the hover info for the closest point
-    margin: { t: 40 }, // Adjust top margin to accommodate the title
-  };
-
-  // Combine real and imaginary points data
-  const data = [realPoints, imaginaryPoints];
-
-  // Create the plot using Plotly
-  Plotly.default.newPlot(plotDivId, data, layout);
-}
 
 function averageEdgeLength(vectors) {
   // Create a map to store the connections
@@ -608,7 +508,6 @@ export {
   limitConnections,
   visualizeCores,
   visualizeEdges,
-  visualizeSortedRows,
   calculateGridWidth,
   calculateAverageDistance,
   determineImageRotation,

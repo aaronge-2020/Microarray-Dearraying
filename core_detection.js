@@ -2,7 +2,6 @@
 
 import * as tf from "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.14.0/+esm";
 
-import { preprocessCores } from "./delaunay_triangulation.js";
 
 import { visualizeSegmentationResults } from "./drawCanvas.js";
 

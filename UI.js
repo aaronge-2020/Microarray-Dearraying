@@ -164,7 +164,7 @@ function resetApplication() {
   }
 
   // Reset the data structures that hold the core data
-  window.cores = [];
+  window.preprocessedCores = [];
   window.sortedCoresData = [];
   window.finalCores = [];
   window.loadedImg = null;

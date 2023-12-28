@@ -29,22 +29,12 @@ function rotatePoint(point, angle) {
 
   async function preprocessForTravelingAlgorithm(originalImageContainer) {
 
-    loadDataAndDetermineParams(window.cores, getHyperparametersFromUI());
-
-    const xOffsetValue = document.getElementById("xOffsetValue");
-    const xOffset = document.getElementById("xOffset");
-    xOffset.value = window.preprocessingData.minX;
-    xOffsetValue.value = window.preprocessingData.minX; // Update the output element with the slider value
-
-    const yOffset = document.getElementById("yOffset");
-    const yOffsetValue = document.getElementById("yOffsetValue");
-    yOffsetValue.value = window.preprocessingData.minY; // Update the output element with the slider value
-    yOffset.value = window.preprocessingData.minY;
+    loadDataAndDetermineParams(window.preprocessedCores, getHyperparametersFromUI());
 
     // If there's an image and cores data, draw the cores with the new radius
     drawCoresOnCanvasForTravelingAlgorithm(
       originalImageContainer.src,
-      window.cores,
+      window.preprocessedCores,
       window.preprocessingData.minX,
       window.preprocessingData.minY
     );
@@ -98,6 +88,10 @@ async function runTravelingAlgorithm(normalizedCores, params) {
     // Extract the original rows in sorted order
     let sortedRows = sortingHelper.map((item) => item.originalRow);
   
+    const userRadius = document.getElementById("userRadius").value;
+
+
+
     let sortedData = [];
     sortedRows.forEach((row, rowIndex) => {
       row.forEach((core, colIndex) => {
@@ -106,10 +100,12 @@ async function runTravelingAlgorithm(normalizedCores, params) {
   
         // Add the core or imaginary point to sortedData
         sortedData.push({
-          x: core.point[0],
-          y: core.point[1],
+          x: core.point[0] + window.preprocessingData.minX,
+          y: core.point[1] + window.preprocessingData.minY,
           row: rowIndex,
           col: colIndex,
+          defaultRadius: parseInt(userRadius),
+          currentRadius: parseInt(userRadius),
           isImaginary: isImaginary,
         });
       });
@@ -141,7 +137,7 @@ async function runTravelingAlgorithm(normalizedCores, params) {
   
     const [bestEdgeSet, bestEdgeSetLength, originAngle] =
       await determineImageRotation(
-        cores,
+        normalizedCores,
         lengthFilteredEdges,
         params.minAngle,
         params.maxAngle,
@@ -151,8 +147,8 @@ async function runTravelingAlgorithm(normalizedCores, params) {
   
     let coordinatesInput = bestEdgeSet.map(([start, end]) => {
       return [
-        [cores[start].x, cores[start].y],
-        [cores[end].x, cores[end].y],
+        [normalizedCores[start].x, normalizedCores[start].y],
+        [normalizedCores[end].x, normalizedCores[end].y],
       ];
     });
   
