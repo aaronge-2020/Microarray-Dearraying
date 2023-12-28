@@ -98,7 +98,6 @@ async function runTravelingAlgorithm(normalizedCores, params) {
           y: core.point[1] + window.preprocessingData.minY,
           row: rowIndex,
           col: colIndex,
-          defaultRadius: parseInt(userRadius),
           currentRadius: parseInt(userRadius),
           isImaginary: isImaginary,
         });

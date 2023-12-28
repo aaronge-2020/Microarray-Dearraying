@@ -16,8 +16,9 @@ let currentActionIndex = -1;
 
 // Function to add a core
 function addCore(x, y) {
-  const newCore = { x, y, radius: 4 }; // Set defaultRadius as needed
+  const newCore = { x, y, radius: 10 }; // Set radius as needed
   window.properties.push(newCore);
+  console.log(newCore);
   window.preprocessedCores = preprocessCores(window.properties);
   recordAction({ type: "add", core: newCore });
   redrawCanvas();
@@ -329,8 +330,10 @@ function updateCoreProperties(coreIndex, newProperties) {
 
 async function applyAndVisualizeTravelingAlgorithm() {
   if (window.preprocessedCores) {
-    await runTravelingAlgorithm(window.preprocessedCores, getHyperparametersFromUI());
 
+    console.log(window.preprocessedCores.length);
+    await runTravelingAlgorithm(window.preprocessedCores, getHyperparametersFromUI());
+    
     // Use the loaded image if available, otherwise use default or file input image
     const imageSrc = window.loadedImg
       ? window.loadedImg.src

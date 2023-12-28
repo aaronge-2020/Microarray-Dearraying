@@ -196,7 +196,7 @@ function bindEventListeners() {
     .getElementById("apply-hyperparameters")
     .addEventListener("click", applyAndVisualizeTravelingAlgorithm);
 
-    document
+  document
     .getElementById("create-virtual-grid")
     .addEventListener("click", obtainHyperparametersAndDrawVirtualGrid);
 
@@ -265,7 +265,7 @@ function bindEventListeners() {
         document.getElementById("startingY").value,
         10
       );
-      
+
       // Update the virtual grid with the new spacing values
       updateVirtualGridSpacing(
         horizontalSpacing,
@@ -304,10 +304,9 @@ function bindEventListeners() {
 
       // Change the defaultRadius value of each core in window.sortedCores to the new radius
       window.sortedCoresData.forEach((core) => {
-        core.defaultRadius = parseInt(userRadius);
-        if (core.defaultRadius == core.currentRadius) {
-          core.currentRadius = parseInt(userRadius);
-        }
+
+        core.currentRadius = parseInt(userRadius);
+
       });
 
     } else {
@@ -359,7 +358,7 @@ const initSegmentation = async () => {
 
 
 
-    document
+  document
     .getElementById("applySegmentation")
     .addEventListener("click", async function () {
       // Assuming `properties` is the variable holding your segmentation results
@@ -373,7 +372,7 @@ const initSegmentation = async () => {
       // preprocessForTravelingAlgorithm(originalImageContainer);
     });
 
-    document
+  document
     .getElementById("finalizeSegmentation")
     .addEventListener("click", async function () {
       // Assuming `properties` is the variable holding your segmentation results
