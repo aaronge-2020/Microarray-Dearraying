@@ -368,6 +368,7 @@ async function applyAndVisualize() {
       document.getElementById("horizontalSpacing").value,
       10
     );
+
     const verticalSpacing = parseInt(
       document.getElementById("verticalSpacing").value,
       10
@@ -435,8 +436,8 @@ function createVirtualGrid(
 
       vctx.clip();
 
-      const sourceX = core.x + window.preprocessingData.minX - userRadius;
-      const sourceY = core.y + window.preprocessingData.minY - userRadius;
+      const sourceX = core.x - userRadius;
+      const sourceY = core.y - userRadius;
 
       vctx.drawImage(
         img,
