@@ -251,18 +251,18 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
 
     const currentTime = Date.now();
 
-    if (currentTime - lastActionTime > actionDebounceInterval) {
+    
       const mouseX = event.offsetX;
       const mouseY = event.offsetY;
       selectedCore = window.sortedCoresData.find(core =>
         Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.currentRadius
       );
-
+      if (currentTime - lastActionTime > actionDebounceInterval) {
       if (selectedCore) {
         if (event.shiftKey) {
           // Prompt for row and column editing
-          const newRow = prompt("Enter new row value:", selectedCore.row);
-          const newCol = prompt("Enter new column value:", selectedCore.col);
+          const newRow = prompt("Enter new row value:", selectedCore.row + 1);
+          const newCol = prompt("Enter new column value:", selectedCore.col + 1);
           if (newRow !== null && newCol !== null) {
             selectedCore.row = parseInt(newRow, 10);
             selectedCore.col = parseInt(newCol, 10);
@@ -272,8 +272,9 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
           isDragging = true;
         }
       }
-      lastActionTime = currentTime;
     }
+    lastActionTime = currentTime;
+
   });
 
   canvas.addEventListener("mousemove", (event) => {
