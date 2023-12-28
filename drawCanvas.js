@@ -264,8 +264,8 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
           const newRow = prompt("Enter new row value:", selectedCore.row + 1);
           const newCol = prompt("Enter new column value:", selectedCore.col + 1);
           if (newRow !== null && newCol !== null) {
-            selectedCore.row = parseInt(newRow, 10);
-            selectedCore.col = parseInt(newCol, 10);
+            selectedCore.row = parseInt(newRow, 10) - 1;
+            selectedCore.col = parseInt(newCol, 10) - 1;
           }
           drawCores();
         } else {
