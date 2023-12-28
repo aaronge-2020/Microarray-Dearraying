@@ -254,7 +254,7 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
         ctx.fillStyle = "blue"; // Text color
         ctx.font = "10px Arial"; // Text font and size
         ctx.fillText(
-          `(${sortedCore.row},${sortedCore.col})`,
+          `(${sortedCore.row + 1},${sortedCore.col + 1})`,
           sortedCore.x + xOffset - userRadius + 2,
           sortedCore.y + yOffset
         );
@@ -378,7 +378,7 @@ function createVirtualGrid(
       vctx.fillStyle = "black"; // Text color
       vctx.font = "12px Arial"; // Text font and size
       vctx.fillText(
-        `(${core.row},${core.col})`,
+        `(${core.row + 1},${core.col + 1})`,
         idealX - userRadius / 2,
         idealY - userRadius / 2
       );
