@@ -31,7 +31,6 @@ function rotatePoint(point, angle) {
 
     await loadDataAndDetermineParams(window.preprocessedCores, getHyperparametersFromUI());
 
-
     applyAndVisualizeTravelingAlgorithm();
   }
 

@@ -215,64 +215,6 @@ async function visualizeSegmentationResults(
 }
 
 
-// function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
-//   const img = new Image();
-//   img.src = imageSrc;
-//   const canvas = document.getElementById("coreCanvas");
-//   const ctx = canvas.getContext("2d");
-//   let selectedCore = null;
-//   let isDragging = false;
-
-
-//   img.onload = () => {
-//     drawCores();
-//   };
-
-//   function drawCores() {
-//     ctx.clearRect(0, 0, canvas.width, canvas.height);
-//     ctx.drawImage(img, 0, 0, img.width, img.height);
-//     window.sortedCoresData.forEach(drawCore);
-//   }
-
-//   function drawCore(core) {
-//     ctx.beginPath();
-//     ctx.arc(core.x , core.y , core.defaultRadius, 0, Math.PI * 2);
-//     ctx.strokeStyle = core.isImaginary ? "orange" : "red";
-//     ctx.lineWidth = 2;
-//     ctx.stroke();
-
-//     ctx.fillStyle = "blue";
-//     ctx.font = "10px Arial";
-//     ctx.fillText(`(${core.row},${core.col})`, core.x - core.defaultRadius + 2 , core.y );
-//   }
-
-//   canvas.addEventListener("mousedown", (event) => {
-
-//     const mouseX = event.offsetX;
-//     const mouseY = event.offsetY;
-//     selectedCore = window.sortedCoresData.find(core => 
-//       Math.sqrt(((core.x ) - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.defaultRadius
-//     );
-
-//     if (selectedCore) {
-//       isDragging = true;
-//     }
-//   });
-
-//   canvas.addEventListener("mousemove", (event) => {
-//     if (!isDragging || !selectedCore) return;
-
-//     selectedCore.x = event.offsetX;
-//     selectedCore.y = event.offsetY;
-//     drawCores();
-//   });
-
-//   canvas.addEventListener("mouseup", () => {
-//     isDragging = false;
-//     selectedCore = null;
-//   });
-// }
-
 function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
   const img = new Image();
   img.src = imageSrc;
@@ -305,25 +247,31 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
   }
 
   canvas.addEventListener("mousedown", (event) => {
-    const mouseX = event.offsetX;
-    const mouseY = event.offsetY;
-    selectedCore = window.sortedCoresData.find(core =>
-      Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.currentRadius
-    );
 
-    if (selectedCore) {
-      if (event.shiftKey) {
-        // Prompt for row and column editing
-        const newRow = prompt("Enter new row value:", selectedCore.row);
-        const newCol = prompt("Enter new column value:", selectedCore.col);
-        if (newRow !== null && newCol !== null) {
-          selectedCore.row = parseInt(newRow, 10);
-          selectedCore.col = parseInt(newCol, 10);
+    currentTime = Date.now();
+
+    if (currentTime - lastActionTime > actionDebounceInterval) {
+      const mouseX = event.offsetX;
+      const mouseY = event.offsetY;
+      selectedCore = window.sortedCoresData.find(core =>
+        Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.currentRadius
+      );
+
+      if (selectedCore) {
+        if (event.shiftKey) {
+          // Prompt for row and column editing
+          const newRow = prompt("Enter new row value:", selectedCore.row);
+          const newCol = prompt("Enter new column value:", selectedCore.col);
+          if (newRow !== null && newCol !== null) {
+            selectedCore.row = parseInt(newRow, 10);
+            selectedCore.col = parseInt(newCol, 10);
+          }
+          drawCores();
+        } else {
+          isDragging = true;
         }
-        drawCores();
-      } else {
-        isDragging = true;
       }
+      lastActionTime = currentTime;
     }
   });
 
