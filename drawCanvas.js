@@ -243,12 +243,12 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
 
     ctx.fillStyle = "blue";
     ctx.font = "10px Arial";
-    ctx.fillText(`(${core.row},${core.col})`, core.x - core.currentRadius + 2, core.y);
+    ctx.fillText(`(${core.row + 1},${core.col + 1})`, core.x - core.currentRadius + 2, core.y);
   }
 
   canvas.addEventListener("mousedown", (event) => {
 
-    currentTime = Date.now();
+    const currentTime = Date.now();
 
     if (currentTime - lastActionTime > actionDebounceInterval) {
       const mouseX = event.offsetX;
@@ -340,39 +340,51 @@ async function applyAndVisualizeTravelingAlgorithm() {
 
     drawCoresOnCanvasForTravelingAlgorithm(imageSrc, window.sortedCoresData);
 
-    const horizontalSpacing = parseInt(
-      document.getElementById("horizontalSpacing").value,
-      10
-    );
 
-    const verticalSpacing = parseInt(
-      document.getElementById("verticalSpacing").value,
-      10
-    );
-    const startingX = parseInt(document.getElementById("startingX").value, 10);
-    const startingY = parseInt(document.getElementById("startingY").value, 10);
-
-    createVirtualGrid(
-      imageSrc,
-      window.sortedCoresData,
-      horizontalSpacing,
-      verticalSpacing,
-      startingX,
-      startingY
-    );
   } else {
     console.error("No cores data available. Please load a file first.");
   }
 }
 
+function obtainHyperparametersAndDrawVirtualGrid()
+{
+  const horizontalSpacing = parseInt(
+    document.getElementById("horizontalSpacing").value,
+    10
+  );
+
+  const verticalSpacing = parseInt(
+    document.getElementById("verticalSpacing").value,
+    10
+  );
+  const startingX = parseInt(document.getElementById("startingX").value, 10);
+  const startingY = parseInt(document.getElementById("startingY").value, 10);
+
+  createVirtualGrid(
+    window.sortedCoresData,
+    horizontalSpacing,
+    verticalSpacing,
+    startingX,
+    startingY
+  );
+}
+
+
 function createVirtualGrid(
-  imageSrc,
   sortedCoresData,
   horizontalSpacing,
   verticalSpacing,
   startingX,
   startingY
 ) {
+  // Use the loaded image if available, otherwise use default or file input image
+
+  const imageSrc = window.loadedImg
+  ? window.loadedImg.src
+  : document.getElementById("fileInput").files.length > 0
+    ? URL.createObjectURL(document.getElementById("fileInput").files[0])
+    : "path/to/default/image.jpg";
+
   const virtualGridCanvas = document.getElementById("virtualGridCanvas");
   if (!virtualGridCanvas) {
     console.error("Virtual grid canvas not found");
@@ -451,19 +463,12 @@ function updateVirtualGridSpacing(
 ) {
   const virtualGridCanvas = document.getElementById("virtualGridCanvas");
   const vctx = virtualGridCanvas.getContext("2d");
-  // Use the loaded image if available, otherwise use default or file input image
-  const imageSrc = window.loadedImg
-    ? window.loadedImg.src
-    : document.getElementById("fileInput").files.length > 0
-      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
-      : "path/to/default/image.jpg";
 
   // Clear the existing grid
   vctx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
 
   // Redraw the grid with new spacings
   createVirtualGrid(
-    imageSrc,
     window.sortedCoresData,
     horizontalSpacing,
     verticalSpacing,
@@ -499,4 +504,5 @@ export {
   updateVirtualGridSpacing,
   redrawCoresForTravelingAlgorithm,
   visualizeSegmentationResults,
+  obtainHyperparametersAndDrawVirtualGrid,
 };

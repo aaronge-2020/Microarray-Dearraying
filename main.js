@@ -17,6 +17,7 @@ import {
   applyAndVisualizeTravelingAlgorithm,
   updateVirtualGridSpacing,
   redrawCoresForTravelingAlgorithm,
+  obtainHyperparametersAndDrawVirtualGrid
 } from "./drawCanvas.js";
 
 import { loadDataAndDetermineParams } from "./data_processing.js";
@@ -194,6 +195,10 @@ function bindEventListeners() {
   document
     .getElementById("apply-hyperparameters")
     .addEventListener("click", applyAndVisualizeTravelingAlgorithm);
+
+    document
+    .getElementById("create-virtual-grid")
+    .addEventListener("click", obtainHyperparametersAndDrawVirtualGrid);
 
   // Add event listeners for range inputs to show the current value
   document
