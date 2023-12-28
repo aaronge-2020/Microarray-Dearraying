@@ -11,7 +11,7 @@ import {
     traveling_algorithm,
   } from "./delaunay_triangulation.js";
 
-  import { applyAndVisualize } from "./drawCanvas.js";
+  import { applyAndVisualizeTravelingAlgorithm } from "./drawCanvas.js";
 
   import { getHyperparametersFromUI } from "./UI.js";
 
@@ -29,10 +29,10 @@ function rotatePoint(point, angle) {
 
   async function preprocessForTravelingAlgorithm() {
 
-    loadDataAndDetermineParams(window.preprocessedCores, getHyperparametersFromUI());
+    await loadDataAndDetermineParams(window.preprocessedCores, getHyperparametersFromUI());
 
 
-    applyAndVisualize();
+    applyAndVisualizeTravelingAlgorithm();
   }
 
 async function runTravelingAlgorithm(normalizedCores, params) {
@@ -155,13 +155,13 @@ async function runTravelingAlgorithm(normalizedCores, params) {
     document.getElementById("originAngle").value = originAngle.toFixed(2);
     document.getElementById("gridWidth").value = d.toFixed(2);
     document.getElementById("imageWidth").value = imageWidth.toFixed(2);
-    document.getElementById("gamma").value = (0.9 * d).toFixed(2);
+    document.getElementById("gamma").value = (d).toFixed(2);
   
     // Update the params object with the new calculations
     params.originAngle = originAngle;
     params.gridWidth = d;
     params.imageWidth = imageWidth;
-    params.gamma = 0.9 * d;
+    params.gamma = d;
   }
   
   function saveUpdatedCores() {
@@ -174,7 +174,7 @@ async function runTravelingAlgorithm(normalizedCores, params) {
   
     const dataStr =
       "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(window.finalCores));
+      encodeURIComponent(JSON.stringify(window.sortedCoresData));
     const downloadAnchorNode = document.createElement("a");
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", "updated_cores.json");

@@ -14,7 +14,7 @@ import { saveUpdatedCores, preprocessForTravelingAlgorithm } from "./data_proces
 import { preprocessCores } from "./delaunay_triangulation.js";
 
 import {
-  applyAndVisualize,
+  applyAndVisualizeTravelingAlgorithm,
   updateVirtualGridSpacing,
   redrawCoresForTravelingAlgorithm,
 } from "./drawCanvas.js";
@@ -193,7 +193,7 @@ function bindEventListeners() {
   // Event listener for the Apply Hyperparameters button
   document
     .getElementById("apply-hyperparameters")
-    .addEventListener("click", applyAndVisualize);
+    .addEventListener("click", applyAndVisualizeTravelingAlgorithm);
 
   // Add event listeners for range inputs to show the current value
   document
@@ -260,7 +260,7 @@ function bindEventListeners() {
         document.getElementById("startingY").value,
         10
       );
-
+      
       // Update the virtual grid with the new spacing values
       updateVirtualGridSpacing(
         horizontalSpacing,
@@ -300,6 +300,9 @@ function bindEventListeners() {
       // Change the defaultRadius value of each core in window.sortedCores to the new radius
       window.sortedCoresData.forEach((core) => {
         core.defaultRadius = parseInt(userRadius);
+        if (core.defaultRadius == core.currentRadius) {
+          core.currentRadius = parseInt(userRadius);
+        }
       });
 
     } else {
