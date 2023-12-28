@@ -5,7 +5,7 @@ import { preprocessCores } from "./delaunay_triangulation.js";
 
 import * as tf from "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.14.0/+esm";
 let lastActionTime = 0;
-const actionDebounceInterval = 300; // milliseconds
+const actionDebounceInterval = 500; // milliseconds
 
 // Pure function to get input values
 const getInputValue = (inputId) => document.getElementById(inputId).value;

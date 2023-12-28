@@ -202,18 +202,15 @@ function segmentationAlgorithm(
 // }
 
 async function preprocessAndPredict(imageElement, model) {
+
   // Original image dimensions
   const originalWidth = imageElement.width;
   const originalHeight = imageElement.height;
 
-    // Calculate scale factors
-    const scaleX = 1024 / originalWidth;
-    const scaleY = 1024 / originalHeight;
-
   // Create a canvas for padding and resizing
   const canvasPad = document.createElement("canvas");
   const ctxPad = canvasPad.getContext("2d");
-  
+
   // Set canvas size to the padded size (1024x1024)
   canvasPad.width = 1024;
   canvasPad.height = 1024;
@@ -240,17 +237,11 @@ async function preprocessAndPredict(imageElement, model) {
   // Predict the mask from the model
   const predictions = await model.predict(tensor);
 
-  // Resize the predictions to scale them back to the original image dimensions
-  const scaledPredictions = tf.image.resizeBilinear(predictions, [
-    Math.ceil(predictions.shape[1] * scaleY),
-    Math.ceil(predictions.shape[2] * scaleX)
-  ]);
-
   // Dispose of the tensor to free memory
-  tensor.dispose();
+  // tensor.dispose();
 
   // Return the scaled predictions Tensor for further processing
-  return scaledPredictions;
+  return predictions;
 }
 
 // Function to apply the threshold to the predictions
@@ -305,9 +296,13 @@ async function runPipeline(
     disTransformMultiplier
   );
 
+  // Original image dimensions
+  const originalWidth = imageElement.width;
+  const originalHeight = imageElement.height;
+
   // Scale centroids back to the original image size
-  const scaleX = imageElement.width / 512;
-  const scaleY = imageElement.height / 512;
+  const scaleX = originalWidth / 512 * 1024 / originalWidth;
+  const scaleY = originalHeight / 512 * 1024 / originalHeight;
   for (const prop in properties) {
     properties[prop].x *= scaleX;
     properties[prop].y *= scaleY;
