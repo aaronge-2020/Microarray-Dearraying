@@ -251,13 +251,14 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
 
     const currentTime = Date.now();
 
-    
+    if (currentTime - lastActionTime > actionDebounceInterval) {
+
       const mouseX = event.offsetX;
       const mouseY = event.offsetY;
       selectedCore = window.sortedCoresData.find(core =>
         Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.currentRadius
       );
-      if (currentTime - lastActionTime > actionDebounceInterval) {
+
       if (selectedCore) {
         if (event.shiftKey) {
           // Prompt for row and column editing
@@ -334,7 +335,7 @@ async function applyAndVisualizeTravelingAlgorithm() {
 
     console.log(window.preprocessedCores.length);
     await runTravelingAlgorithm(window.preprocessedCores, getHyperparametersFromUI());
-    
+
     // Use the loaded image if available, otherwise use default or file input image
     const imageSrc = window.loadedImg
       ? window.loadedImg.src
@@ -350,8 +351,7 @@ async function applyAndVisualizeTravelingAlgorithm() {
   }
 }
 
-function obtainHyperparametersAndDrawVirtualGrid()
-{
+function obtainHyperparametersAndDrawVirtualGrid() {
   const horizontalSpacing = parseInt(
     document.getElementById("horizontalSpacing").value,
     10
@@ -384,10 +384,10 @@ function createVirtualGrid(
   // Use the loaded image if available, otherwise use default or file input image
 
   const imageSrc = window.loadedImg
-  ? window.loadedImg.src
-  : document.getElementById("fileInput").files.length > 0
-    ? URL.createObjectURL(document.getElementById("fileInput").files[0])
-    : "path/to/default/image.jpg";
+    ? window.loadedImg.src
+    : document.getElementById("fileInput").files.length > 0
+      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
+      : "path/to/default/image.jpg";
 
   const virtualGridCanvas = document.getElementById("virtualGridCanvas");
   if (!virtualGridCanvas) {
@@ -399,11 +399,11 @@ function createVirtualGrid(
     sortedCoresData.reduce((acc, core) => Math.max(acc, core.row), 0) + 1;
   const cols =
     sortedCoresData.reduce((acc, core) => Math.max(acc, core.col), 0) + 1;
-  const userRadius = parseInt(document.getElementById("userRadius").value);
+  const defaultRadius = parseInt(document.getElementById("userRadius").value);
   virtualGridCanvas.width =
-    cols * horizontalSpacing + userRadius * 2 + startingX;
+    cols * horizontalSpacing + defaultRadius * 2 + startingX;
   virtualGridCanvas.height =
-    rows * verticalSpacing + userRadius * 2 + startingY;
+    rows * verticalSpacing + defaultRadius * 2 + startingY;
 
   const vctx = virtualGridCanvas.getContext("2d");
   const img = new Image();
@@ -415,6 +415,8 @@ function createVirtualGrid(
     sortedCoresData.forEach((core) => {
       const idealX = startingX + core.col * horizontalSpacing;
       const idealY = startingY + core.row * verticalSpacing;
+      const userRadius = core.currentRadius;
+
 
       vctx.save();
       vctx.beginPath();
@@ -459,6 +461,8 @@ function createVirtualGrid(
     console.error("Image failed to load.");
   };
 }
+
+
 function updateVirtualGridSpacing(
   horizontalSpacing,
   verticalSpacing,
