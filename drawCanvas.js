@@ -273,8 +273,9 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
           isDragging = true;
         }
       }
+      lastActionTime = currentTime;
+
     }
-    lastActionTime = currentTime;
 
   });
 
