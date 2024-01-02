@@ -263,9 +263,14 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
     ctx.arc(core.x, core.y, core.currentRadius, 0, Math.PI * 2);
     // Check if the core is temporary and change color
     if (core.isTemporary) {
-      ctx.strokeStyle = "#FF69B4"; // For example, a bright pink color
+      ctx.strokeStyle = "#808080"; // For example, a bright pink color
+      // Ensure the temporary core has dashed lines
+      ctx.setLineDash([5, 5]);
+
+
     } else {
       ctx.strokeStyle = core.isImaginary ? "#FFA500" : "#0056b3"; // Original color logic
+      ctx.setLineDash([]); // Reset line dash
     }
     ctx.lineWidth = isSelected ? 4 : 2; // Thicker border for selected core
     ctx.stroke();
