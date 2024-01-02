@@ -429,3 +429,45 @@ button:hover {
   background-color: #f9f9f9;
   color: #555;
 }
+
+.radio-group {
+  display: flex;
+  margin-bottom: 10px; /* spacing between form elements */
+}
+
+.radio-group input[type="radio"] {
+  display: none; /* hide the default radio button */
+}
+
+.radio-group label.radio-button {
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  border-radius: 20px; /* rounded corners for pill shape */
+  background-color: #f0f0f0;
+  margin-right: 10px; /* spacing between buttons */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Change background color when radio button is selected */
+.radio-group input[type="radio"]:checked + label.radio-button {
+  background-color: #007BFF;
+  color: white;
+  border-color: #007BFF;
+}
+
+
+
+/* Improve spacing and alignment of the Save button */
+#saveCoreEdits {
+  margin-top: 20px;
+  width: 100%;
+  padding: 10px;
+
+  color: white;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.2);
+  transition: background-color 0.3s ease;
+}
+

@@ -215,7 +215,6 @@ async function visualizeSegmentationResults(
     });
 }
 
-
 function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
   const img = new Image();
   img.src = imageSrc;
@@ -227,11 +226,9 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
 
   let selectedIndex = null; // Index of the selected core
 
-
   img.onload = () => {
     drawCores();
   };
-
   function drawCores() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, img.width, img.height);
@@ -239,46 +236,88 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
       drawCore(core, index === selectedIndex);
     });
   }
-
+  
   function drawCore(core, isSelected) {
+    // Shadow for a three-dimensional effect
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = isSelected ? 10 : 5;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+  
+    // Core circle
     ctx.beginPath();
     ctx.arc(core.x, core.y, core.currentRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = isSelected ? "blue" : core.isImaginary ? "orange" : "red";
-    ctx.lineWidth = isSelected ? 3 : 2; // Thicker border for selected core
+    ctx.strokeStyle = core.isImaginary ? "#FFA500" : "#0056b3"; // Orange for imaginary, blue for real
+    ctx.lineWidth = isSelected ? 4 : 2; // Thicker border for selected core
     ctx.stroke();
-
-    ctx.fillStyle = isSelected ? "blue" : "black"; // Text color indicates selection
-    ctx.font = isSelected ? "bold 12px Arial" : "10px Arial";
-    ctx.fillText(`(${core.row + 1},${core.col + 1})`, core.x - core.currentRadius + 2, core.y - core.currentRadius - 5);
+  
+    // Reset shadow for text
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  
+    // Core labels
+    ctx.fillStyle = isSelected ? "#FFD700" : "#333"; // Gold for selected, dark grey for others
+    ctx.font = isSelected ? "bold 14px Arial" : "12px Arial";
+    const textMetrics = ctx.measureText(`(${core.row + 1},${core.col + 1})`);
+    ctx.fillText(
+      `(${core.row + 1},${core.col + 1})`,
+      core.x - textMetrics.width / 2,
+      core.y - core.currentRadius - 10
+    );
   }
+  
 
   function updateSidebar(core) {
-    document.getElementById('rowInput').value = core ? core.row + 1 : '';
-    document.getElementById('columnInput').value = core ? core.col + 1 : '';
-    document.getElementById('xInput').value = core ? core.x : '';
-    document.getElementById('yInput').value = core ? core.y : '';
-    document.getElementById('radiusInput').value = core ? core.currentRadius : '';
-    document.getElementById('annotationsInput').value = core ? core.annotations : '';
-    document.getElementById('radiusInput').addEventListener('change', function(event) {
-      if (selectedIndex !== null) {
-        window.sortedCoresData[selectedIndex].currentRadius = parseFloat(event.target.value);
-        drawCores();
-      }
-    });
+    document.getElementById("rowInput").value = core ? core.row + 1 : "";
+    document.getElementById("columnInput").value = core ? core.col + 1 : "";
+    document.getElementById("xInput").value = core ? core.x : "";
+    document.getElementById("yInput").value = core ? core.y : "";
+    document.getElementById("radiusInput").value = core
+      ? core.currentRadius
+      : "";
+    document.getElementById("annotationsInput").value = core
+      ? core.annotations
+      : "";
+
+    // Set the correct radio button based on the isImaginary property
+    if (core) {
+      document.getElementById("realInput").checked = !core.isImaginary;
+      document.getElementById("imaginaryInput").checked = core.isImaginary;
+    } else {
+      // If no core is selected, reset the radio buttons
+      document.getElementById("realInput").checked = false;
+      document.getElementById("imaginaryInput").checked = false;
+    }
+
+    document
+      .getElementById("radiusInput")
+      .addEventListener("change", function (event) {
+        if (selectedIndex !== null) {
+          window.sortedCoresData[selectedIndex].currentRadius = parseFloat(
+            event.target.value
+          );
+          drawCores();
+        }
+      });
   }
-canvas.addEventListener("mousedown", (event) => {
+  canvas.addEventListener("mousedown", (event) => {
     const mouseX = event.offsetX;
     const mouseY = event.offsetY;
-    selectedIndex = window.sortedCoresData.findIndex(core =>
-      Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.currentRadius
+    selectedIndex = window.sortedCoresData.findIndex(
+      (core) =>
+        Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) <
+        core.currentRadius
     );
 
     if (selectedIndex !== -1) {
       selectedCore = window.sortedCoresData[selectedIndex];
       isDragging = true;
       updateSidebar(selectedCore);
+      drawCores();
     } else {
       updateSidebar(null);
+      drawCores();
     }
   });
 
@@ -321,42 +360,45 @@ canvas.addEventListener("mousedown", (event) => {
       isAltDown = false;
     }
   });
+  document
+    .getElementById("saveCoreEdits")
+    .addEventListener("click", function () {
+      if (selectedIndex !== null) {
+        const core = window.sortedCoresData[selectedIndex];
+        core.row = parseInt(document.getElementById("rowInput").value, 10) - 1;
+        core.col =
+          parseInt(document.getElementById("columnInput").value, 10) - 1;
+        core.x = parseFloat(document.getElementById("xInput").value);
+        core.y = parseFloat(document.getElementById("yInput").value);
+        core.currentRadius = parseFloat(
+          document.getElementById("radiusInput").value
+        );
+        core.annotations = document.getElementById("annotationsInput").value;
 
-  document.getElementById('saveCoreEdits').addEventListener('click', function() {
-    if (selectedIndex !== null) {
-      // Get the selected core from the array using the selectedIndex
-      const core = window.sortedCoresData[selectedIndex];
-      core.row = parseInt(document.getElementById('rowInput').value, 10) - 1;
-      core.col = parseInt(document.getElementById('columnInput').value, 10) - 1;
-      core.x = parseFloat(document.getElementById('xInput').value);
-      core.y = parseFloat(document.getElementById('yInput').value);
-      core.currentRadius = parseFloat(document.getElementById('radiusInput').value);
-      core.annotations = document.getElementById('annotationsInput').value;
+        // Update the isImaginary property based on which radio button is checked
+        core.isImaginary = document.getElementById("imaginaryInput").checked;
 
-      drawCores(); // Redraw the cores with the updated data
-      // updateSidebar(null); // Clear the sidebar inputs
-      // selectedIndex = null; // Optionally, clear the selectedIndex if you don't want to keep the core selected
-    }
-  });
+        drawCores(); // Redraw the cores with the updated data
+      }
+    });
 }
-
 
 async function applyAndVisualizeTravelingAlgorithm() {
   if (window.preprocessedCores) {
-
     console.log(window.preprocessedCores.length);
-    await runTravelingAlgorithm(window.preprocessedCores, getHyperparametersFromUI());
+    await runTravelingAlgorithm(
+      window.preprocessedCores,
+      getHyperparametersFromUI()
+    );
 
     // Use the loaded image if available, otherwise use default or file input image
     const imageSrc = window.loadedImg
       ? window.loadedImg.src
       : document.getElementById("fileInput").files.length > 0
-        ? URL.createObjectURL(document.getElementById("fileInput").files[0])
-        : "path/to/default/image.jpg";
+      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
+      : "path/to/default/image.jpg";
 
     drawCoresOnCanvasForTravelingAlgorithm(imageSrc, window.sortedCoresData);
-
-
   } else {
     console.error("No cores data available. Please load a file first.");
   }
@@ -384,7 +426,6 @@ function obtainHyperparametersAndDrawVirtualGrid() {
   );
 }
 
-
 function createVirtualGrid(
   sortedCoresData,
   horizontalSpacing,
@@ -397,8 +438,8 @@ function createVirtualGrid(
   const imageSrc = window.loadedImg
     ? window.loadedImg.src
     : document.getElementById("fileInput").files.length > 0
-      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
-      : "path/to/default/image.jpg";
+    ? URL.createObjectURL(document.getElementById("fileInput").files[0])
+    : "path/to/default/image.jpg";
 
   const virtualGridCanvas = document.getElementById("virtualGridCanvas");
   if (!virtualGridCanvas) {
@@ -427,7 +468,6 @@ function createVirtualGrid(
       const idealX = startingX + core.col * horizontalSpacing;
       const idealY = startingY + core.row * verticalSpacing;
       const userRadius = core.currentRadius;
-
 
       vctx.save();
       vctx.beginPath();
@@ -472,7 +512,6 @@ function createVirtualGrid(
     console.error("Image failed to load.");
   };
 }
-
 
 function updateVirtualGridSpacing(
   horizontalSpacing,
