@@ -10,7 +10,8 @@ html {
 }
 
 header {
-  background: #fff;
+  background: #0056b3; /* Updated color for contrast */
+  color: white; /* White text on blue background */
   padding: 10px 20px;
   display: flex;
   justify-content: space-between;
@@ -37,18 +38,18 @@ nav ul li {
 
 nav ul li a {
   text-decoration: none;
-  color: #0056b3;
+  color: white; /* White links for contrast */
   transition: color 0.3s;
 }
 
 nav ul li a:hover {
-  color: #00376b;
+  color: #d9d9d9; /* Lighter color on hover */
 }
+
 
 .app-container {
   display: flex;
-  min-height: calc(100vh - 60px);
-  /* Adjust based on header height */
+  min-height: calc(100vh - 60px); /* Adjust based on header height */
 }
 
 .sidebar {
@@ -97,6 +98,24 @@ nav ul li a:hover {
   font-size: 14px;
 }
 
+/* Style improvements for form elements */
+.hyperparameters input[type=range] {
+  -webkit-appearance: none; /* Override default appearance */
+  width: 100%; /* Full width */
+  height: 8px; /* Specified height */
+  border-radius: 5px; /* Rounded corners */
+  background: #d3d3d3; /* Light grey background */
+  outline: none; /* Remove outline */
+  opacity: 0.7; /* Partial transparency */
+  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  transition: opacity .2s;
+}
+
+.hyperparameters input[type=range]:hover {
+  opacity: 1; /* Fully opaque on hover */
+}
+
+
 .hyperparameters input[type=number],
 .hyperparameters input[type=text],
 .file-upload-container input[type=file],
@@ -125,7 +144,45 @@ button {
 
 button:hover {
   background-color: #00407a;
+  transform: scale(1.05); /* Slightly increase size on hover */
 }
+
+/* Primary Action Button Style */
+.primary-action-button {
+  background-color: #4CAF50; /* Green color to indicate primary action */
+  border: none;
+  border-radius: 4px;
+  color: white;
+  padding: 10px 20px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  font-weight: 600; /* Make the font a bit bolder */
+  margin: 5px;
+}
+
+.primary-action-button:hover {
+  background-color: #367B35; /* Darker green on hover */
+  transform: scale(1.05); /* Slightly increase size on hover */
+}
+
+/* Secondary Action Button Style */
+.secondary-action-button {
+  background-color: #f0f0f0; /* Light grey to indicate secondary action */
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px 20px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin: 5px;
+}
+
+.secondary-action-button:hover {
+  background-color: #e0e0e0; /* Slightly darker grey on hover */
+}
+
 
 .tab {
   overflow: hidden;
@@ -150,8 +207,8 @@ button:hover {
 }
 
 .tab button.active {
-  background-color: #cacaca;
-  color: #fff;
+  background-color: #0056b3; /* Same color as header for consistency */
+  color: white; /* White text for visibility */
 }
 
 .tabcontent {
@@ -162,7 +219,11 @@ button:hover {
   background: #fff;
 }
 
+/* Responsive design adjustments */
 @media (max-width: 768px) {
+  header .logo h1 {
+    font-size: 20px; /* Smaller text for smaller screens */
+  }
 
   .sidebar,
   .content {
@@ -172,6 +233,11 @@ button:hover {
 
   .sidebar {
     border-right: none;
+  }
+
+  .tab button {
+    padding: 10px 12px; /* Smaller padding for smaller screens */
+    font-size: 15px; /* Smaller font size for smaller screens */
   }
 }
 
@@ -319,4 +385,47 @@ button:hover {
   margin: 4px 2px;
   cursor: pointer;
   transition-duration: 0.4s;
+}
+
+.core-edit-container {
+  display: flex; /* Establish flex container */
+  justify-content: space-between; /* Space out children */
+  align-items: flex-start; /* Align items to the start of the flex container */
+}
+#coreCanvas {
+  max-width: 80%; /* Adjust this value as needed */
+  height: auto; /* Maintain aspect ratio */
+}
+
+.edit-sidebar {
+  width: 20%; /* Adjust width as needed */
+  min-width: 200px; /* Minimum width so content doesn't get too squished */
+  background-color: #ffffff;
+  padding: 20px;
+  max-height: 100vh;
+  overflow-y: auto;
+  box-shadow: -1px 0px 4px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+  margin-left: 20px; /* Add some space between the canvas and sidebar */
+}
+
+.edit-sidebar h2 {
+  color: #333;
+  font-weight: 600;
+}
+
+.edit-sidebar label {
+  display: block;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.edit-sidebar input[type=number],
+.edit-sidebar textarea {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+  color: #555;
 }

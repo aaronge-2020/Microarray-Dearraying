@@ -75,13 +75,13 @@
                             max="1" />
                     </fieldset>
 
-                    <button type="button" id="applySegmentation">Apply Segmentation</button>
-                    <button type="button" id="finalizeSegmentation">Finalize Segmentation</button>
+                    <button type="button" class="secondary-action-button" id="applySegmentation">Apply Segmentation</button>
+                    <button type="button"  id="finalizeSegmentation">Finalize Segmentation</button>
 
                     <br>
                 </div>
 
-                <button type="button" id="downloadSegmentationResults">Download JSON</button>
+                <button type="button" class="primary-action-button" id="downloadSegmentationResults">Download JSON</button>
             </form>
         </div>
 
@@ -133,9 +133,11 @@
                         <input type="number" id="multiplier" name="multiplier" step="0.1" value="1.5"
                             style="display: none">
 
-                        <label for="imageWidth" title="Width of the entire gird used in the traveling algorithm" style="display: none;">Image
+                        <label for="imageWidth" title="Width of the entire gird used in the traveling algorithm"
+                            style="display: none;">Image
                             Width</label>
-                        <input type="number" id="imageWidth" name="imageWidth" step="1" value="1024" style="display: none;">
+                        <input type="number" id="imageWidth" name="imageWidth" step="1" value="1024"
+                            style="display: none;">
 
                         <label for="searchAngle" title="Angle to search in the traveling algorithm"
                             style="display: none">Search Angle</label>
@@ -189,16 +191,17 @@
 
                     </div>
 
-                    <button type="button" id="apply-hyperparameters">Apply Gridding</button>
+                    <button type="button" class="secondary-action-button" id="apply-hyperparameters">Apply Gridding</button>
                     <button type="button" id="create-virtual-grid">Create Virtual Grid</button>
 
                     <br>
                 </div>
-                <button type="button" id="saveResults">Save Results</button>
+                <button type="button" class="primary-action-button" id="saveResults">Save Results</button>
 
             </form>
 
         </div>
+
 
         <!-- Additional sidebar for Virtual Grid adjustments -->
         <div class="sidebar" id="virtualGridSidebar" style="display: none;">
@@ -256,11 +259,37 @@
                 </div>
             </div>
 
-
             <div id="RawData" class="tabcontent">
-                <canvas id="coreCanvas" width="1024" height="1024" style="border:none;"></canvas>
-                <!-- Put other raw data related content here -->
+                <div class="core-edit-container"> <!-- This is the new flex container -->
+                    <canvas id="coreCanvas" width="1024" height="1024" style="border:none;"></canvas>
+                    
+                    <div class="edit-sidebar" id="editSidebar">
+                        <h2>Edit Core</h2>
+                        <form id="editCoreForm">
+                            <label for="rowInput">Row:</label>
+                            <input type="number" id="rowInput" name="rowInput">
+    
+                            <label for="columnInput">Column:</label>
+                            <input type="number" id="columnInput" name="columnInput">
+    
+                            <label for="xInput">X Position:</label>
+                            <input type="number" id="xInput" name="xInput">
+    
+                            <label for="yInput">Y Position:</label>
+                            <input type="number" id="yInput" name="yInput">
+    
+                            <label for="radiusInput">Radius:</label>
+                            <input type="number" id="radiusInput" name="radiusInput" step="0.1">
+
+                            <label for="annotationsInput">Annotations:</label>
+                            <textarea type="text" id="annotationsInput" name="annotationsInput"></textarea>
+    
+                            <button type="button" id="saveCoreEdits">Save Edits</button>
+                        </form>
+                    </div>
+                </div>
             </div>
+
 
             <div id="VirtualGrid" class="tabcontent">
                 <canvas id="virtualGridCanvas" width="1024" height="1024" style="border:none;"></canvas>

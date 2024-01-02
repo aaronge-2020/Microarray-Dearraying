@@ -20,8 +20,6 @@ import {
   obtainHyperparametersAndDrawVirtualGrid
 } from "./drawCanvas.js";
 
-import { loadDataAndDetermineParams } from "./data_processing.js";
-
 import { loadModel, runPipeline, loadOpenCV } from "./core_detection.js";
 
 // Initialize image elements

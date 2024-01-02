@@ -85,6 +85,13 @@ function showImageSegmentationSidebar() {
   document.getElementById("virtualGridSidebar").style.display = "none";
 }
 
+function openEditSidebar(row, col, annotation) {
+  document.getElementById('rowInput').value = row;
+  document.getElementById('columnInput').value = col;
+  document.getElementById('annotationInput').value = annotation;
+  document.getElementById('editSidebar').style.display = 'block';
+}
+
 
 function resetSlidersAndOutputs() {
   // Reset Image Parameters

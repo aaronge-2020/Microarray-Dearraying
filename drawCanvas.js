@@ -225,6 +225,9 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
   let isDragging = false;
   let isAltDown = false; // Track the state of the Alt key
 
+  let selectedIndex = null; // Index of the selected core
+
+
   img.onload = () => {
     drawCores();
   };
@@ -232,51 +235,51 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
   function drawCores() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, img.width, img.height);
-    window.sortedCoresData.forEach(drawCore);
+    window.sortedCoresData.forEach((core, index) => {
+      drawCore(core, index === selectedIndex);
+    });
   }
 
-  function drawCore(core) {
+  function drawCore(core, isSelected) {
     ctx.beginPath();
     ctx.arc(core.x, core.y, core.currentRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = core.isImaginary ? "orange" : "red";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = isSelected ? "blue" : core.isImaginary ? "orange" : "red";
+    ctx.lineWidth = isSelected ? 3 : 2; // Thicker border for selected core
     ctx.stroke();
 
-    ctx.fillStyle = "blue";
-    ctx.font = "10px Arial";
-    ctx.fillText(`(${core.row + 1},${core.col + 1})`, core.x - core.currentRadius + 2, core.y);
+    ctx.fillStyle = isSelected ? "blue" : "black"; // Text color indicates selection
+    ctx.font = isSelected ? "bold 12px Arial" : "10px Arial";
+    ctx.fillText(`(${core.row + 1},${core.col + 1})`, core.x - core.currentRadius + 2, core.y - core.currentRadius - 5);
   }
 
-  canvas.addEventListener("mousedown", (event) => {
-
-    const currentTime = Date.now();
-
-    if (currentTime - lastActionTime > actionDebounceInterval) {
-
-      const mouseX = event.offsetX;
-      const mouseY = event.offsetY;
-      selectedCore = window.sortedCoresData.find(core =>
-        Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.currentRadius
-      );
-
-      if (selectedCore) {
-        if (event.shiftKey) {
-          // Prompt for row and column editing
-          const newRow = prompt("Enter new row value:", selectedCore.row + 1);
-          const newCol = prompt("Enter new column value:", selectedCore.col + 1);
-          if (newRow !== null && newCol !== null) {
-            selectedCore.row = parseInt(newRow, 10) - 1;
-            selectedCore.col = parseInt(newCol, 10) - 1;
-          }
-          drawCores();
-        } else {
-          isDragging = true;
-        }
+  function updateSidebar(core) {
+    document.getElementById('rowInput').value = core ? core.row + 1 : '';
+    document.getElementById('columnInput').value = core ? core.col + 1 : '';
+    document.getElementById('xInput').value = core ? core.x : '';
+    document.getElementById('yInput').value = core ? core.y : '';
+    document.getElementById('radiusInput').value = core ? core.currentRadius : '';
+    document.getElementById('annotationsInput').value = core ? core.annotations : '';
+    document.getElementById('radiusInput').addEventListener('change', function(event) {
+      if (selectedIndex !== null) {
+        window.sortedCoresData[selectedIndex].currentRadius = parseFloat(event.target.value);
+        drawCores();
       }
-      lastActionTime = currentTime;
+    });
+  }
+canvas.addEventListener("mousedown", (event) => {
+    const mouseX = event.offsetX;
+    const mouseY = event.offsetY;
+    selectedIndex = window.sortedCoresData.findIndex(core =>
+      Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) < core.currentRadius
+    );
 
+    if (selectedIndex !== -1) {
+      selectedCore = window.sortedCoresData[selectedIndex];
+      isDragging = true;
+      updateSidebar(selectedCore);
+    } else {
+      updateSidebar(null);
     }
-
   });
 
   canvas.addEventListener("mousemove", (event) => {
@@ -292,12 +295,19 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
       selectedCore.x = event.offsetX;
       selectedCore.y = event.offsetY;
     }
+
+    if (isDragging && selectedIndex !== null) {
+      updateSidebar(window.sortedCoresData[selectedIndex]); // Update sidebar during dragging
+    }
+
     drawCores();
   });
 
-  canvas.addEventListener("mouseup", () => {
+  canvas.addEventListener("mouseup", (event) => {
+    if (selectedIndex !== null) {
+      updateSidebar(window.sortedCoresData[selectedIndex]); // Update sidebar on mouseup
+    }
     isDragging = false;
-    selectedCore = null;
   });
 
   window.addEventListener("keydown", (event) => {
@@ -311,24 +321,24 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
       isAltDown = false;
     }
   });
+
+  document.getElementById('saveCoreEdits').addEventListener('click', function() {
+    if (selectedIndex !== null) {
+      // Get the selected core from the array using the selectedIndex
+      const core = window.sortedCoresData[selectedIndex];
+      core.row = parseInt(document.getElementById('rowInput').value, 10) - 1;
+      core.col = parseInt(document.getElementById('columnInput').value, 10) - 1;
+      core.x = parseFloat(document.getElementById('xInput').value);
+      core.y = parseFloat(document.getElementById('yInput').value);
+      core.currentRadius = parseFloat(document.getElementById('radiusInput').value);
+      core.annotations = document.getElementById('annotationsInput').value;
+
+      drawCores(); // Redraw the cores with the updated data
+      // updateSidebar(null); // Clear the sidebar inputs
+      // selectedIndex = null; // Optionally, clear the selectedIndex if you don't want to keep the core selected
+    }
+  });
 }
-
-
-function updateCoreProperties(coreIndex, newProperties) {
-  const core = window.sortedCoresData[coreIndex];
-  if (!core) return;
-
-  Object.assign(core, newProperties);
-  // Use the loaded image if available, otherwise use default or file input image
-  const imageSrc = window.loadedImg
-    ? window.loadedImg.src
-    : document.getElementById("fileInput").files.length > 0
-      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
-      : "path/to/default/image.jpg";
-
-  drawCoresOnCanvasForTravelingAlgorithm(imageSrc, window.sortedCoresData);
-}
-
 
 
 async function applyAndVisualizeTravelingAlgorithm() {
