@@ -561,3 +561,13 @@ select:disabled {
 label:disabled {
   color: #6c757d; /* Dark grey text to match the input fields */
 }
+
+/* Cursor style for add mode */
+.add-mode {
+  cursor: crosshair; /* Crosshair cursor resembles an addition sign */
+}
+
+/* You can also define a class for edit mode if you need a specific cursor style */
+.edit-mode {
+  cursor: default; /* Default cursor for edit mode */
+}

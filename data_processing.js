@@ -100,23 +100,12 @@ async function runTravelingAlgorithm(normalizedCores, params) {
           col: colIndex,
           currentRadius: parseInt(userRadius),
           isImaginary: isImaginary,
+          annotations: '',
         });
       });
     });
   
     window.sortedCoresData = sortedData;
-  
-    // Set the window.finalCores to be the sortedData + the window.preprocessingData.minX /minY
-  
-    window.finalCores = sortedData.map((core) => {
-      return {
-        x: core.x + window.preprocessingData.minX,
-        y: core.y + window.preprocessingData.minY,
-        row: core.row,
-        col: core.col,
-        isImaginary: core.isImaginary,
-      };
-    });
   }
   
   // Updated function to accept hyperparameters and cores data
@@ -163,7 +152,7 @@ async function runTravelingAlgorithm(normalizedCores, params) {
   }
   
   function saveUpdatedCores() {
-    if (!window.finalCores) {
+    if (!window.sortedCoresData) {
       alert("No data available to save.");
       return;
     }

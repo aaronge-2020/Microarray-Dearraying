@@ -266,8 +266,6 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
       ctx.strokeStyle = "#808080"; // For example, a bright pink color
       // Ensure the temporary core has dashed lines
       ctx.setLineDash([5, 5]);
-
-
     } else {
       ctx.strokeStyle = core.isImaginary ? "#FFA500" : "#0056b3"; // Original color logic
       ctx.setLineDash([]); // Reset line dash
@@ -371,32 +369,31 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
   });
 
   canvas.addEventListener("click", (event) => {
-
     const currentTime = Date.now();
     if (currentTime - lastActionTime > actionDebounceInterval) {
-    if (currentMode === "add") {
-      if (!tempCore) {
-        // First click - set position
-        tempCore = {
-          x: event.offsetX,
-          y: event.offsetY,
-          row: 0,
-          col: 0,
-          currentRadius: 5, // Set a default radius
-          annotations: "",
-          isImaginary: true,
-          isTemporary: true,
-        };
-        isSettingSize = true;
-      } else if (isSettingSize) {
-        // Second click - set size
-        finalizeCoreSize(event);
-        updateSidebar(tempCore);
+      if (currentMode === "add") {
+        if (!tempCore) {
+          // First click - set position
+          tempCore = {
+            x: event.offsetX,
+            y: event.offsetY,
+            row: 0,
+            col: 0,
+            currentRadius: 5, // Set a default radius
+            annotations: "",
+            isImaginary: true,
+            isTemporary: true,
+          };
+          isSettingSize = true;
+        } else if (isSettingSize) {
+          // Second click - set size
+          finalizeCoreSize(event);
+          updateSidebar(tempCore);
+        }
+        drawCores(); // Redraw to show or update the temporary core
       }
-      drawCores(); // Redraw to show or update the temporary core
+      lastActionTime = currentTime;
     }
-    lastActionTime = currentTime;
-  }
   });
 
   canvas.addEventListener("mousemove", (event) => {
@@ -603,56 +600,72 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
     .getElementById("cancelCoreDrawing")
     .addEventListener("click", cancelCoreDrawing);
 
+  var coreCanvasElement = document.getElementById("coreCanvas");
+
   // Add event listeners for mode switching buttons (assumes buttons exist in your HTML)
   // Call clearTempCore when necessary, such as when switching modes
-  document.getElementById("switchToEditMode").addEventListener("click", () => {
-    event.target.classList.add('active');
-    document.getElementById('switchToAddMode').classList.remove('active');
+  document.getElementById("switchToEditMode").addEventListener("click", (event) => {
+    event.target.classList.add("active");
+    document.getElementById("switchToAddMode").classList.remove("active");
     switchMode("edit");
     isSettingSize = false;
     clearTempCore();
+    // Add 'edit-mode' class and remove 'add-mode' class
+    coreCanvasElement.classList.add("edit-mode");
+    coreCanvasElement.classList.remove("add-mode");
   });
 
-  document.getElementById("switchToAddMode").addEventListener("click", () => {
-    event.target.classList.add('active');
-    document.getElementById('switchToEditMode').classList.remove('active');
+  document.getElementById("switchToAddMode").addEventListener("click", (event) => {
+    event.target.classList.add("active");
+    document.getElementById("switchToEditMode").classList.remove("active");
     switchMode("add");
     isSettingSize = false;
     clearTempCore();
+    // Add 'add-mode' class and remove 'edit-mode' class
+    coreCanvasElement.classList.add("add-mode");
+    coreCanvasElement.classList.remove("edit-mode");
   });
 
   document
     .getElementById("removeCoreButton")
     .addEventListener("click", function () {
-      if (selectedIndex !== null) {
-        const coreToRemove = window.sortedCoresData[selectedIndex];
-        window.sortedCoresData.splice(selectedIndex, 1); // Remove the selected core from the array
-        selectedIndex = null; // Reset the selected index
-        updateSidebar(null); // Update the sidebar to reflect no selection
-        if (document.getElementById("addAutoUpdateColumnsCheckbox").checked) {
-          updateColumnsInRowAfterModification(coreToRemove.row);
+      const currentTime = Date.now();
+      if (currentTime - lastActionTime > actionDebounceInterval) {
+        if (selectedIndex !== null) {
+          const coreToRemove = window.sortedCoresData[selectedIndex];
+          window.sortedCoresData.splice(selectedIndex, 1); // Remove the selected core from the array
+          selectedIndex = null; // Reset the selected index
+          updateSidebar(null); // Update the sidebar to reflect no selection
+          if (document.getElementById("addAutoUpdateColumnsCheckbox").checked) {
+            updateColumnsInRowAfterModification(coreToRemove.row);
+          }
+          drawCores(); // Redraw the cores
         }
-        drawCores(); // Redraw the cores
+        lastActionTime = currentTime;
       }
     });
 
+  // Function to toggle the disabled state based on the checkbox
+  function toggleColumnInput() {
+    var editAutoUpdateColumnsCheckbox = document.getElementById(
+      currentMode + "AutoUpdateColumnsCheckbox"
+    );
+    var columnInput = document.getElementById(currentMode + "ColumnInput");
 
-    // Function to toggle the disabled state based on the checkbox
-    function toggleColumnInput() {
-      var editAutoUpdateColumnsCheckbox = document.getElementById(currentMode + 'AutoUpdateColumnsCheckbox');
-      var columnInput = document.getElementById(currentMode + 'ColumnInput');
-
-        // If the checkbox is checked, disable the column input
-        if(editAutoUpdateColumnsCheckbox.checked) {
-            columnInput.disabled = true;
-        } else {
-            // Otherwise, enable it
-            columnInput.disabled = false;
-        }
+    // If the checkbox is checked, disable the column input
+    if (editAutoUpdateColumnsCheckbox.checked) {
+      columnInput.disabled = true;
+    } else {
+      // Otherwise, enable it
+      columnInput.disabled = false;
     }
-    document.getElementById("editAutoUpdateColumnsCheckbox").addEventListener("change", toggleColumnInput);
-    document.getElementById("addAutoUpdateColumnsCheckbox").addEventListener("change", toggleColumnInput);
-    
+  }
+  document
+    .getElementById("editAutoUpdateColumnsCheckbox")
+    .addEventListener("change", toggleColumnInput);
+  document
+    .getElementById("addAutoUpdateColumnsCheckbox")
+    .addEventListener("change", toggleColumnInput);
 }
 
 async function applyAndVisualizeTravelingAlgorithm() {
