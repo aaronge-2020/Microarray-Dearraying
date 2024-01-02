@@ -398,10 +398,12 @@ button:hover {
 }
 
 .edit-sidebar {
+  overflow: auto;
   width: 20%; /* Adjust width as needed */
   min-width: 200px; /* Minimum width so content doesn't get too squished */
   background-color: #ffffff;
   padding: 20px;
+  height: 650px; /* Or use max-height */
   max-height: 100vh;
   overflow-y: auto;
   box-shadow: -1px 0px 4px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
@@ -429,6 +431,46 @@ button:hover {
   background-color: #f9f9f9;
   color: #555;
 }
+/* Styles for button group */
+.edit-sidebar .button-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* Styling for the buttons */
+.edit-sidebar button {
+  flex: 1; /* Allows buttons to take equal width */
+  padding: 10px;
+  margin: 0 5px; /* Add some space between buttons */
+  border-radius: 4px;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+/* Specific styling for the Cancel button */
+.edit-sidebar .cancel-button {
+  background-color: #F44336; /* Red color for cancel button */
+  color: white;
+}
+
+/* Hover effect for buttons */
+.edit-sidebar button:hover {
+  opacity: 0.9;
+}
+
+.checkbox-group {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-group label {
+  margin-left: 5px;
+}
+
 
 .radio-group {
   display: flex;
@@ -471,3 +513,51 @@ button:hover {
   transition: background-color 0.3s ease;
 }
 
+#removeCoreButton{
+  margin-top: 20px;
+  width: 100%;
+  padding: 10px;
+  background-color: #F44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.2);
+  transition: background-color 0.3s ease;
+}
+
+.mode-button {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.mode-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.mode-button:not(.active):hover {
+  background-color: #e7e7e7;
+}
+
+/* Style for disabled input fields */
+input:disabled,
+textarea:disabled,
+button:disabled,
+select:disabled {
+  background-color: #e9ecef; /* Light grey background */
+  color: #6c757d; /* Dark grey text */
+  cursor: not-allowed; /* Cursor to indicate the field is not interactive */
+  border: 1px solid #ced4da; /* Slightly darker border to match */
+}
+
+/* Optionally, style the labels for disabled fields */
+label:disabled {
+  color: #6c757d; /* Dark grey text to match the input fields */
+}

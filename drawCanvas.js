@@ -215,7 +215,7 @@ async function visualizeSegmentationResults(
     });
 }
 
-function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
+function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
   const img = new Image();
   img.src = imageSrc;
   const canvas = document.getElementById("coreCanvas");
@@ -226,36 +226,55 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
 
   let selectedIndex = null; // Index of the selected core
 
+  let currentMode = "edit"; // Possible values: 'edit', 'add'
+
+  let tempCore = null; // Temporary core for add mode
+  let isSettingSize = false; // Track whether setting position or size
+
+  let isDraggingTempCore = false;
+  let tempCoreOffsetX = 0;
+  let tempCoreOffsetY = 0;
+
   img.onload = () => {
     drawCores();
   };
+
   function drawCores() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, img.width, img.height);
     window.sortedCoresData.forEach((core, index) => {
       drawCore(core, index === selectedIndex);
     });
+
+    if (tempCore) {
+      drawCore(tempCore, false);
+    }
   }
-  
+
   function drawCore(core, isSelected) {
     // Shadow for a three-dimensional effect
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
     ctx.shadowBlur = isSelected ? 10 : 5;
     ctx.shadowOffsetX = 2;
     ctx.shadowOffsetY = 2;
-  
+
     // Core circle
     ctx.beginPath();
     ctx.arc(core.x, core.y, core.currentRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = core.isImaginary ? "#FFA500" : "#0056b3"; // Orange for imaginary, blue for real
+    // Check if the core is temporary and change color
+    if (core.isTemporary) {
+      ctx.strokeStyle = "#FF69B4"; // For example, a bright pink color
+    } else {
+      ctx.strokeStyle = core.isImaginary ? "#FFA500" : "#0056b3"; // Original color logic
+    }
     ctx.lineWidth = isSelected ? 4 : 2; // Thicker border for selected core
     ctx.stroke();
-  
+
     // Reset shadow for text
     ctx.shadowBlur = 0;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
-  
+
     // Core labels
     ctx.fillStyle = isSelected ? "#FFD700" : "#333"; // Gold for selected, dark grey for others
     ctx.font = isSelected ? "bold 14px Arial" : "12px Arial";
@@ -266,87 +285,167 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
       core.y - core.currentRadius - 10
     );
   }
-  
 
+  // Function to switch modes
+  function switchMode(newMode) {
+    currentMode = newMode;
+
+    // Reset selected index when switching modes
+    selectedIndex = null;
+    updateSidebar(null);
+
+    if (newMode === "edit") {
+      document.getElementById("editSidebar").style.display = "block";
+      document.getElementById("addSidebar").style.display = "none";
+    } else if (newMode === "add") {
+      document.getElementById("editSidebar").style.display = "none";
+      document.getElementById("addSidebar").style.display = "block";
+    }
+  }
+
+  // Modified updateSidebar function to handle add mode
   function updateSidebar(core) {
-    document.getElementById("rowInput").value = core ? core.row + 1 : "";
-    document.getElementById("columnInput").value = core ? core.col + 1 : "";
-    document.getElementById("xInput").value = core ? core.x : "";
-    document.getElementById("yInput").value = core ? core.y : "";
-    document.getElementById("radiusInput").value = core
+    const sidebarPrefix = currentMode === "edit" ? "edit" : "add";
+    document.getElementById(sidebarPrefix + "RowInput").value = core
+      ? core.row + 1
+      : "";
+    document.getElementById(sidebarPrefix + "ColumnInput").value = core
+      ? core.col + 1
+      : "";
+    document.getElementById(sidebarPrefix + "XInput").value = core
+      ? core.x
+      : "";
+    document.getElementById(sidebarPrefix + "YInput").value = core
+      ? core.y
+      : "";
+    document.getElementById(sidebarPrefix + "RadiusInput").value = core
       ? core.currentRadius
       : "";
-    document.getElementById("annotationsInput").value = core
+    document.getElementById(sidebarPrefix + "AnnotationsInput").value = core
       ? core.annotations
       : "";
-
-    // Set the correct radio button based on the isImaginary property
-    if (core) {
-      document.getElementById("realInput").checked = !core.isImaginary;
-      document.getElementById("imaginaryInput").checked = core.isImaginary;
-    } else {
-      // If no core is selected, reset the radio buttons
-      document.getElementById("realInput").checked = false;
-      document.getElementById("imaginaryInput").checked = false;
+    if (core && currentMode === "edit") {
+      document.getElementById(sidebarPrefix + "RealInput").checked =
+        !core.isImaginary;
+      document.getElementById(sidebarPrefix + "ImaginaryInput").checked =
+        core.isImaginary;
     }
-
-    document
-      .getElementById("radiusInput")
-      .addEventListener("change", function (event) {
-        if (selectedIndex !== null) {
-          window.sortedCoresData[selectedIndex].currentRadius = parseFloat(
-            event.target.value
-          );
-          drawCores();
-        }
-      });
   }
-  canvas.addEventListener("mousedown", (event) => {
-    const mouseX = event.offsetX;
-    const mouseY = event.offsetY;
-    selectedIndex = window.sortedCoresData.findIndex(
-      (core) =>
-        Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) <
-        core.currentRadius
-    );
 
-    if (selectedIndex !== -1) {
-      selectedCore = window.sortedCoresData[selectedIndex];
-      isDragging = true;
-      updateSidebar(selectedCore);
-      drawCores();
+  canvas.addEventListener("mousedown", (event) => {
+    if (currentMode === "add") {
+      if (tempCore && !isSettingSize) {
+        const dx = event.offsetX - tempCore.x;
+        const dy = event.offsetY - tempCore.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < tempCore.currentRadius) {
+          isDraggingTempCore = true;
+          tempCoreOffsetX = dx;
+          tempCoreOffsetY = dy;
+        }
+      }
     } else {
-      updateSidebar(null);
-      drawCores();
+      const mouseX = event.offsetX;
+      const mouseY = event.offsetY;
+      selectedIndex = window.sortedCoresData.findIndex(
+        (core) =>
+          Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) <
+          core.currentRadius
+      );
+
+      if (selectedIndex !== -1) {
+        selectedCore = window.sortedCoresData[selectedIndex];
+        isDragging = true;
+        updateSidebar(selectedCore);
+        drawCores();
+      } else {
+        updateSidebar(null);
+        drawCores();
+      }
     }
+  });
+
+  canvas.addEventListener("click", (event) => {
+
+    const currentTime = Date.now();
+    if (currentTime - lastActionTime > actionDebounceInterval) {
+    if (currentMode === "add") {
+      if (!tempCore) {
+        // First click - set position
+        tempCore = {
+          x: event.offsetX,
+          y: event.offsetY,
+          row: 0,
+          col: 0,
+          currentRadius: 5, // Set a default radius
+          annotations: "",
+          isImaginary: true,
+          isTemporary: true,
+        };
+        isSettingSize = true;
+      } else if (isSettingSize) {
+        // Second click - set size
+        finalizeCoreSize(event);
+        updateSidebar(tempCore);
+      }
+      drawCores(); // Redraw to show or update the temporary core
+    }
+    lastActionTime = currentTime;
+  }
   });
 
   canvas.addEventListener("mousemove", (event) => {
-    if (!isDragging || !selectedCore) return;
-
-    if (isAltDown) {
-      // Resizing logic when Alt key is down
-      let dx = event.offsetX - selectedCore.x;
-      let dy = event.offsetY - selectedCore.y;
-      selectedCore.currentRadius = Math.sqrt(dx * dx + dy * dy);
+    if (currentMode === "add") {
+      if (isSettingSize) {
+        // Dynamically update the size of the temporary core
+        updateCoreSize(event);
+        drawCores();
+      } else if (isDraggingTempCore) {
+        tempCore.x = event.offsetX - tempCoreOffsetX;
+        tempCore.y = event.offsetY - tempCoreOffsetY;
+        updateSidebar(tempCore);
+        drawCores();
+      } else if (tempCore && isAltDown) {
+        // Logic for setting or adjusting the size of the temporary core
+        const dx = event.offsetX - tempCore.x;
+        const dy = event.offsetY - tempCore.y;
+        tempCore.currentRadius = Math.sqrt(dx * dx + dy * dy);
+        updateSidebar(tempCore);
+        drawCores();
+      }
     } else {
-      // Dragging logic
-      selectedCore.x = event.offsetX;
-      selectedCore.y = event.offsetY;
-    }
+      if (!isDragging || !selectedCore) return;
 
-    if (isDragging && selectedIndex !== null) {
-      updateSidebar(window.sortedCoresData[selectedIndex]); // Update sidebar during dragging
-    }
+      if (isAltDown) {
+        // Resizing logic when Alt key is down
+        let dx = event.offsetX - selectedCore.x;
+        let dy = event.offsetY - selectedCore.y;
+        selectedCore.currentRadius = Math.sqrt(dx * dx + dy * dy);
+      } else {
+        // Dragging logic
+        selectedCore.x = event.offsetX;
+        selectedCore.y = event.offsetY;
+      }
 
-    drawCores();
+      if (isDragging && selectedIndex !== null) {
+        updateSidebar(window.sortedCoresData[selectedIndex]); // Update sidebar during dragging
+      }
+
+      drawCores();
+    }
   });
 
   canvas.addEventListener("mouseup", (event) => {
-    if (selectedIndex !== null) {
-      updateSidebar(window.sortedCoresData[selectedIndex]); // Update sidebar on mouseup
+    if (currentMode === "add") {
+      if (isDraggingTempCore) {
+        isDraggingTempCore = false;
+      }
+    } else {
+      if (selectedIndex !== null) {
+        updateSidebar(window.sortedCoresData[selectedIndex]); // Update sidebar on mouseup
+      }
+      isDragging = false;
     }
-    isDragging = false;
   });
 
   window.addEventListener("keydown", (event) => {
@@ -363,24 +462,192 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc, coresData) {
   document
     .getElementById("saveCoreEdits")
     .addEventListener("click", function () {
-      if (selectedIndex !== null) {
+      if (currentMode === "edit" && selectedIndex !== null) {
         const core = window.sortedCoresData[selectedIndex];
-        core.row = parseInt(document.getElementById("rowInput").value, 10) - 1;
+        core.row =
+          parseInt(
+            document.getElementById(currentMode + "RowInput").value,
+            10
+          ) - 1;
         core.col =
-          parseInt(document.getElementById("columnInput").value, 10) - 1;
-        core.x = parseFloat(document.getElementById("xInput").value);
-        core.y = parseFloat(document.getElementById("yInput").value);
-        core.currentRadius = parseFloat(
-          document.getElementById("radiusInput").value
+          parseInt(
+            document.getElementById(currentMode + "ColumnInput").value,
+            10
+          ) - 1;
+        core.x = parseFloat(
+          document.getElementById(currentMode + "XInput").value
         );
-        core.annotations = document.getElementById("annotationsInput").value;
+        core.y = parseFloat(
+          document.getElementById(currentMode + "YInput").value
+        );
+        core.currentRadius = parseFloat(
+          document.getElementById(currentMode + "RadiusInput").value
+        );
+        core.annotations = document.getElementById(
+          currentMode + "AnnotationsInput"
+        ).value;
 
         // Update the isImaginary property based on which radio button is checked
-        core.isImaginary = document.getElementById("imaginaryInput").checked;
+        core.isImaginary = document.getElementById(
+          currentMode + "ImaginaryInput"
+        ).checked;
+
+        if (document.getElementById("addAutoUpdateColumnsCheckbox").checked) {
+          updateColumnsInRowAfterModification(core.row);
+        }
 
         drawCores(); // Redraw the cores with the updated data
       }
     });
+
+  // Function to clear the temporary core
+  function clearTempCore() {
+    tempCore = null;
+    isSettingSize = false;
+    drawCores();
+  }
+
+  function updateColumnsInRowAfterModification(row) {
+    const imageRotation = parseFloat(
+      document.getElementById("originAngle").value
+    );
+
+    // Function to rotate a point around the origin
+    function rotatePoint(x, y, angle) {
+      const radians = (angle * Math.PI) / 180;
+      return {
+        x: x * Math.cos(radians) - y * Math.sin(radians),
+        y: x * Math.sin(radians) + y * Math.cos(radians),
+      };
+    }
+
+    // Create an array to hold the original cores with their rotated coordinates for sorting
+    const coresWithRotatedCoordinates = window.sortedCoresData
+      .filter((core) => core.row === row)
+      .map((core) => {
+        return {
+          originalCore: core,
+          rotatedCoordinates: rotatePoint(core.x, core.y, imageRotation),
+        };
+      });
+
+    // Sort the array based on the x-value of the rotated coordinates
+    coresWithRotatedCoordinates.sort(
+      (a, b) => a.rotatedCoordinates.x - b.rotatedCoordinates.x
+    );
+
+    // Assign column values based on the sorted array, updating only the column in the original data
+    let currentColumn = 0;
+    coresWithRotatedCoordinates.forEach((item) => {
+      item.originalCore.col = currentColumn;
+      currentColumn++;
+    });
+  }
+
+  document
+    .getElementById("addCoreButton")
+    .addEventListener("click", function () {
+      if (currentMode === "add" && tempCore) {
+        // Add the temporary core to sortedCoresData
+        tempCore.row =
+          parseInt(document.getElementById("addRowInput").value, 10) - 1;
+        tempCore.col =
+          parseInt(document.getElementById("addColumnInput").value, 10) - 1;
+        tempCore.x = parseFloat(document.getElementById("addXInput").value);
+        tempCore.y = parseFloat(document.getElementById("addYInput").value);
+        tempCore.currentRadius = parseFloat(
+          document.getElementById("addRadiusInput").value
+        );
+        tempCore.annotations = document.getElementById(
+          "addAnnotationsInput"
+        ).value;
+        tempCore.isImaginary =
+          document.getElementById("addImaginaryInput").checked;
+        tempCore.isTemporary = false; // Set the temporary flag to false
+
+        window.sortedCoresData.push(tempCore);
+
+        if (document.getElementById("editAutoUpdateColumnsCheckbox").checked) {
+          updateColumnsInRowAfterModification(tempCore.row);
+        }
+        tempCore = null;
+        drawCores(); // Redraw to update the canvas
+      }
+    });
+
+  function updateCoreSize(event) {
+    const dx = event.offsetX - tempCore.x;
+    const dy = event.offsetY - tempCore.y;
+    tempCore.currentRadius = Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function finalizeCoreSize(event) {
+    updateCoreSize(event);
+    isSettingSize = false;
+  }
+  // Function to cancel the drawing of the current core and reset for a new one
+  function cancelCoreDrawing() {
+    tempCore = null;
+    isSettingSize = false;
+    updateSidebar(null);
+    drawCores();
+  }
+
+  // Event listener for the cancel core drawing button
+  document
+    .getElementById("cancelCoreDrawing")
+    .addEventListener("click", cancelCoreDrawing);
+
+  // Add event listeners for mode switching buttons (assumes buttons exist in your HTML)
+  // Call clearTempCore when necessary, such as when switching modes
+  document.getElementById("switchToEditMode").addEventListener("click", () => {
+    event.target.classList.add('active');
+    document.getElementById('switchToAddMode').classList.remove('active');
+    switchMode("edit");
+    isSettingSize = false;
+    clearTempCore();
+  });
+
+  document.getElementById("switchToAddMode").addEventListener("click", () => {
+    event.target.classList.add('active');
+    document.getElementById('switchToEditMode').classList.remove('active');
+    switchMode("add");
+    isSettingSize = false;
+    clearTempCore();
+  });
+
+  document
+    .getElementById("removeCoreButton")
+    .addEventListener("click", function () {
+      if (selectedIndex !== null) {
+        const coreToRemove = window.sortedCoresData[selectedIndex];
+        window.sortedCoresData.splice(selectedIndex, 1); // Remove the selected core from the array
+        selectedIndex = null; // Reset the selected index
+        updateSidebar(null); // Update the sidebar to reflect no selection
+        if (document.getElementById("addAutoUpdateColumnsCheckbox").checked) {
+          updateColumnsInRowAfterModification(coreToRemove.row);
+        }
+        drawCores(); // Redraw the cores
+      }
+    });
+
+
+    // Function to toggle the disabled state based on the checkbox
+    function toggleColumnInput() {
+      var editAutoUpdateColumnsCheckbox = document.getElementById(currentMode + 'AutoUpdateColumnsCheckbox');
+      var columnInput = document.getElementById(currentMode + 'ColumnInput');
+
+        // If the checkbox is checked, disable the column input
+        if(editAutoUpdateColumnsCheckbox.checked) {
+            columnInput.disabled = true;
+        } else {
+            // Otherwise, enable it
+            columnInput.disabled = false;
+        }
+    }
+    document.getElementById("editAutoUpdateColumnsCheckbox").addEventListener("change", toggleColumnInput);
+    document.getElementById("addAutoUpdateColumnsCheckbox").addEventListener("change", toggleColumnInput);
+    
 }
 
 async function applyAndVisualizeTravelingAlgorithm() {
@@ -398,7 +665,7 @@ async function applyAndVisualizeTravelingAlgorithm() {
       ? URL.createObjectURL(document.getElementById("fileInput").files[0])
       : "path/to/default/image.jpg";
 
-    drawCoresOnCanvasForTravelingAlgorithm(imageSrc, window.sortedCoresData);
+    drawCoresOnCanvasForTravelingAlgorithm(imageSrc);
   } else {
     console.error("No cores data available. Please load a file first.");
   }
@@ -540,15 +807,9 @@ function redrawCoresForTravelingAlgorithm() {
   const imageFile = document.getElementById("fileInput").files[0];
   if ((imageFile || window.loadedImg) && window.preprocessedCores) {
     if (window.loadedImg) {
-      drawCoresOnCanvasForTravelingAlgorithm(
-        window.loadedImg.src,
-        window.preprocessedCores
-      );
+      drawCoresOnCanvasForTravelingAlgorithm(window.loadedImg.src);
     } else {
-      drawCoresOnCanvasForTravelingAlgorithm(
-        URL.createObjectURL(imageFile),
-        window.preprocessedCores
-      );
+      drawCoresOnCanvasForTravelingAlgorithm(URL.createObjectURL(imageFile));
     }
   } else {
     alert("Please load an image first.");
