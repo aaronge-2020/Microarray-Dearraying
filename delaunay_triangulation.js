@@ -256,6 +256,9 @@ function traveling_algorithm(
           let candidate = findCandidateInSector(segments, endPoint, radius, phi, originAngle);
           if (candidate) {
             row.push(candidate);
+            if (isEndPointReal) {
+              candidate.start = endPoint; // Update the start point if the endpoint was real
+            }
             endPoint = candidate.end;
             segments = segments.filter(v => v.index !== candidate.index);
             isEndPointReal = !candidate.isImaginary;
