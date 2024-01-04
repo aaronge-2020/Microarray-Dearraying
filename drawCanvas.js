@@ -466,6 +466,8 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
     .addEventListener("click", function () {
       if (currentMode === "edit" && selectedIndex !== null) {
         const core = window.sortedCoresData[selectedIndex];
+
+        const oldRow = core.row;
         core.row =
           parseInt(
             document.getElementById(currentMode + "RowInput").value,
@@ -496,6 +498,8 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
 
         if (document.getElementById("addAutoUpdateColumnsCheckbox").checked) {
           updateColumnsInRowAfterModification(core.row);
+          updateColumnsInRowAfterModification(oldRow);
+
         }
 
         drawCores(); // Redraw the cores with the updated data
