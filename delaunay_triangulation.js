@@ -222,163 +222,143 @@ function normalizeAngleDegrees(angle) {
   return angle % 360;
 }
 
-// Helper function to check if a point is within the circular sector
+function traveling_algorithm(
+  segments,
+  imageWidth,
+  distance,
+  gamma,
+  phi = 180,
+  originAngle = 0,
+  radiusMultiplier = 0.5
+) {
+  let rows = [];
+  let radius = radiusMultiplier * distance;
+  let imaginaryIndex = -1;
+
+  segments = initializeSegments(segments);
+
+  while (segments.length > 0) {
+    let { startPoint, row } = findStartVectorAndRow(segments);
+    let endPoint = startPoint.end;
+    let isEndPointReal = true;
+    segments = segments.filter(segment => segment.index !== startPoint.index);
+
+    while (true) {
+      let nextVector = findNextVector(segments, endPoint);
+
+      if (nextVector) {
+        row.push(nextVector);
+        endPoint = nextVector.end;
+        segments = segments.filter(v => v.index !== nextVector.index);
+        isEndPointReal = !nextVector.isImaginary;
+      } else {
+        if (!isCloseToImageWidth(endPoint, imageWidth, gamma)) {
+          let candidate = findCandidateInSector(segments, endPoint, radius, phi, originAngle);
+          if (candidate) {
+            row.push(candidate);
+            endPoint = candidate.end;
+            segments = segments.filter(v => v.index !== candidate.index);
+            isEndPointReal = !candidate.isImaginary;
+          } else {
+            let imaginaryVector = createImaginaryVector(endPoint, distance, originAngle, imaginaryIndex);
+            if (isEndPointReal) {
+              imaginaryVector.isImaginary = false; // Mark as not imaginary if the endpoint was real
+            }
+            imaginaryIndex--;
+            row.push(imaginaryVector);
+            endPoint = imaginaryVector.end;
+            isEndPointReal = false;
+            checkImaginaryPointsLimit(row);
+          }
+        } else {
+          let uniqueRow = filterUniquePoints(row);
+          rows.push(uniqueRow);
+          break;
+        }
+      }
+    }
+  }
+  return rows;
+}
+
+// Add helper functions below...
+function initializeSegments(segments) {
+  return segments.map((v, i) => ({
+    start: v[0],
+    end: v[1],
+    index: i,
+    isImaginary: false,
+  }));
+}
+function findStartVectorAndRow(segments) {
+  let startVector = segments.reduce((prev, curr) => 
+    prev.start[0] < curr.start[0] ? prev : curr
+  );
+  let row = [startVector];
+  return { startPoint: startVector, row: row };
+}
+function findNextVector(segments, endPoint) {
+  return segments.find(v => calculateDistance(v.start, endPoint) < 1e-1);
+}
+
+function findCandidateInSector(segments, endPoint, radius, phi, originAngle) {
+  let candidates = segments.filter(v => 
+    pointInSector(v.start, endPoint, radius, phi, originAngle)
+  );
+  if (candidates.length > 0) {
+    return candidates.reduce((prev, curr) =>
+      calculateDistance(curr.end, endPoint) < calculateDistance(prev.end, endPoint)
+        ? curr
+        : prev
+    );
+  }
+  return null;
+}
+function createImaginaryVector(startPoint, distance, originAngle, index) {
+  let deltaRad = originAngle * (Math.PI / 180);
+  let endPoint = [
+    startPoint[0] + distance * Math.cos(deltaRad),
+    startPoint[1] + distance * Math.sin(deltaRad),
+  ];
+  return {
+    start: startPoint,
+    end: endPoint,
+    index: index,
+    isImaginary: true
+  };
+}
+
+function filterUniquePoints(row) {
+  return row.map(vec => ({
+    point: vec.start,
+    index: vec.index,
+    isImaginary: vec.isImaginary,
+  })).filter((v, i, self) => 
+    self.findIndex(t => t.point[0] === v.point[0] && t.point[1] === v.point[1]) === i
+  );
+}
+
 function pointInSector(V_prime, Vj, r, phi = 360, originAngle = 0) {
   let distance = calculateDistance(V_prime, Vj);
   if (distance > r) return false;
 
   return true;
 
-  // let angleVjVPrime = angleWithXAxis(Vj, V_prime);
-  // let startAngle = normalizeAngleDegrees(originAngle - phi / 2);
-  // let endAngle = normalizeAngleDegrees(originAngle + phi / 2);
-  // angleVjVPrime = normalizeAngleDegrees(angleVjVPrime);
-
-  // if (startAngle < endAngle) {
-  //     return startAngle <= angleVjVPrime && angleVjVPrime <= endAngle;
-  // } else {
-  //     return angleVjVPrime >= startAngle || angleVjVPrime <= endAngle;
-  // }
 }
-
-// Helper function to check if point is close to image width
 function isCloseToImageWidth(point, imageWidth, gamma) {
   return Math.abs(point[0] - imageWidth) < gamma;
 }
+function checkImaginaryPointsLimit(row) {
+  let consecutiveImaginaryPoints = row.reduce((count, vec) => {
+    return vec.isImaginary ? count + 1 : 0;
+  }, 0);
 
-// Main traveling algorithm
-function traveling_algorithm(
-  S,
-  imageWidth,
-  d,
-  gamma,
-  phi = 180,
-  originAngle = 0,
-  radiusMultiplier = 0.5
-) {
-  let A = [];
-  let r = radiusMultiplier * d;
-  let imaginaryPointsIndex = -1;
-
-  S = S.map((v, i) => ({
-    start: v[0],
-    end: v[1],
-    index: i,
-    isImaginary: false,
-  }));
-
-  let firstImaginary = true;
-  let imaginaryPointsCounter = 0; // Counter for consecutive imaginary points
-
-  while (S.length > 0) {
-    let startVector = S.reduce((prev, curr) =>
-      prev.start[0] < curr.start[0] ? prev : curr
-    );
-    let A1 = [startVector];
-    let Vj = startVector.end;
-    S = S.filter((v) => v.index !== startVector.index);
-
-
-    while (true) {
-
-      let nextVector = S.find((v) => calculateDistance(v.start, Vj) < 1e-1);
-
-
-      if (Math.abs(Vj[0]-  703.4210317983902) < 5){
-        console.log('found Vj ', Vj)
-      }
-
-      if (Math.abs(Vj[0]-  666) < 5){
-        console.log('found Vj ', Vj)
-      }
-
-      
-
-      if (nextVector) {
-        Vj = nextVector.end;
-        A1.push(nextVector);
-        S = S.filter((v) => v.index !== nextVector.index);
-        firstImaginary = true;
-        imaginaryPointsCounter = 0;
-        
-      } else {
-        if (!isCloseToImageWidth(Vj, imageWidth, gamma)) {
-          let candidates = S.filter((v) =>
-            pointInSector(v.start, Vj, r, phi, originAngle)
-          );
-          if (candidates.length > 0) {
-            let closestVector = candidates.reduce((prev, curr) =>
-              calculateDistance(curr.end, Vj) < calculateDistance(prev.end, Vj)
-                ? curr
-                : prev
-            );
-
-            if (A1[A1.length - 1].isImaginary === false && firstImaginary) {
-              closestVector.start = Vj
-            }
-
-            Vj = closestVector.end;
-            A1.push(closestVector);
-            S = S.filter((v) => v.index !== closestVector.index);
-            firstImaginary = true;
-            imaginaryPointsCounter = 0;
-
-          } else {
-            let deltaRad = originAngle * (Math.PI / 180);
-            let VjPrime = [
-              Vj[0] + d * Math.cos(deltaRad),
-              Vj[1] + d * Math.sin(deltaRad),
-            ];
-            let imaginaryVector = {
-              start: Vj,
-              end: VjPrime,
-              index: imaginaryPointsIndex,
-              isImaginary: true,
-            };
-
-            if (firstImaginary) {
-              imaginaryVector.isImaginary = false;
-            } else {
-              imaginaryPointsCounter++; // Increment counter for each consecutive imaginary point
-            }
-
-            if (imaginaryPointsCounter > 50) {
-              alert(
-                "Invalid hyperparameters: too many consecutive imaginary points."
-              );
-              throw new Error(
-                "Invalid stopping distance: too many consecutive imaginary points."
-              );
-            }
-
-            A1.push(imaginaryVector);
-            Vj = VjPrime;
-            imaginaryPointsIndex--;
-            firstImaginary = false;
-
-          }
-        } else {
-          let uniqueRow = A1.map((vec) => ({
-            point: vec.start,
-            index: vec.index,
-            isImaginary: vec.isImaginary,
-          })).filter(
-            (v, i, self) =>
-              self.findIndex(
-                (t) => t.point[0] === v.point[0] && t.point[1] === v.point[1]
-              ) === i
-          );
-          A.push(uniqueRow);
-          firstImaginary = true;
-          imaginaryPointsCounter = 0;
-
-          break;
-        }
-      }
-    }
+  if (consecutiveImaginaryPoints > 50) {
+    alert("Invalid hyperparameters: too many consecutive imaginary points.");
+    throw new Error("Invalid stopping distance: too many consecutive imaginary points.");
   }
-  return A;
 }
+
 
 function isPointInList(pointIndex, edgeList) {
   return edgeList.some(
