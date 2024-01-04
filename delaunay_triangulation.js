@@ -278,9 +278,22 @@ function traveling_algorithm(
     let Vj = startVector.end;
     S = S.filter((v) => v.index !== startVector.index);
 
+
     while (true) {
 
       let nextVector = S.find((v) => calculateDistance(v.start, Vj) < 1e-1);
+
+
+      if (Math.abs(Vj[0]-  703.4210317983902) < 5){
+        console.log('found Vj ', Vj)
+      }
+
+      if (Math.abs(Vj[0]-  666) < 5){
+        console.log('found Vj ', Vj)
+      }
+
+      
+
       if (nextVector) {
         Vj = nextVector.end;
         A1.push(nextVector);
@@ -299,6 +312,11 @@ function traveling_algorithm(
                 ? curr
                 : prev
             );
+
+            if (A1[A1.length - 1].isImaginary === false && firstImaginary) {
+              closestVector.start = Vj
+            }
+
             Vj = closestVector.end;
             A1.push(closestVector);
             S = S.filter((v) => v.index !== closestVector.index);
