@@ -352,13 +352,50 @@ function filterUniquePoints(row) {
   );
 }
 
-function pointInSector(V_prime, Vj, r, phi = 360, originAngle = 0) {
-  let distance = calculateDistance(V_prime, Vj);
-  if (distance > r) return false;
+// function pointInSector(V_prime, Vj, r, phi = 360, originAngle = 0) {
+//   let distance = calculateDistance(V_prime, Vj);
+//   if (distance > r) return false;
+//   return true;
+// }
 
-  return true;
+function pointInSector(V_prime, Vj, radius, phi, originAngle) {
+  phi = 360
+  // Calculate the distance between V_prime and Vj
+  const dx = V_prime[0] - Vj[0];
+  const dy = V_prime[1] - Vj[1];
+  const distance = Math.sqrt(dx * dx + dy * dy);
 
+  // Check if the point is within the radius
+  if (distance > radius) {
+      return false;
+  }
+
+  // Calculate the angle from Vj to V_prime
+  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+  // Normalize the angle
+  if (angle < 0) {
+      angle += 360;
+  }
+
+  // Calculate the start and end angles of the sector
+  const startAngle = originAngle;
+  let endAngle = originAngle + phi;
+
+  // Normalize the end angle
+  if (endAngle > 360) {
+      endAngle -= 360;
+  }
+
+  // Check if the angle is within the sector
+  if (startAngle <= endAngle) {
+      return startAngle <= angle && angle <= endAngle;
+  } else { // Case when sector crosses the 360-degree line
+      return angle >= startAngle || angle <= endAngle;
+  }
 }
+
+
 function isCloseToImageWidth(point, imageWidth, gamma) {
   return Math.abs(point[0] - imageWidth) < gamma;
 }
