@@ -271,7 +271,8 @@ function traveling_algorithm(
             checkImaginaryPointsLimit(row);
           }
         } else {
-          let uniqueRow = filterUniquePoints(row);
+          let sortedRow = sortRowByRotatedX(row, originAngle);
+          let uniqueRow = filterUniquePoints(sortedRow);
           rows.push(uniqueRow);
           break;
         }
@@ -281,7 +282,17 @@ function traveling_algorithm(
   return rows;
 }
 
-// Add helper functions below...
+function sortRowByRotatedX(row, originAngle) {
+  const angleRad = originAngle * Math.PI / 180;
+  return row.sort((a, b) => {
+    let rotatedAX = a.start[0] * Math.cos(angleRad) - a.start[1] * Math.sin(angleRad);
+    let rotatedBX = b.start[0] * Math.cos(angleRad) - b.start[1] * Math.sin(angleRad);
+    return rotatedAX - rotatedBX;
+  });
+}
+
+
+
 function initializeSegments(segments) {
   return segments.map((v, i) => ({
     start: v[0],
