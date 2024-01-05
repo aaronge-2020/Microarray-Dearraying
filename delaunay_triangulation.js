@@ -331,6 +331,11 @@ function findNextVector(segments, endPoint) {
 }
 
 function findCandidateInSector(segments, endPoint, radius, phi, originAngle) {
+
+  // Convert to radians
+  originAngle = (originAngle * Math.PI) / 180;
+
+
   let candidates = segments.filter(v => 
     pointInSector(v.start, endPoint, radius, phi, originAngle)
   );
@@ -366,12 +371,6 @@ function filterUniquePoints(row) {
     self.findIndex(t => t.point[0] === v.point[0] && t.point[1] === v.point[1]) === i
   );
 }
-
-// function pointInSector(V_prime, Vj, r, phi = 360, originAngle = 0) {
-//   let distance = calculateDistance(V_prime, Vj);
-//   if (distance > r) return false;
-//   return true;
-// }
 
 function pointInSector(V_prime, Vj, radius, phi, originAngle) {
   phi = 360
