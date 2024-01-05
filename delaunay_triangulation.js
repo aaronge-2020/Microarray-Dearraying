@@ -256,7 +256,10 @@ function traveling_algorithm(
           let candidate = findCandidateInSector(segments, endPoint, radius, phi, originAngle);
           if (candidate) {
             row.push(candidate);
-            if (isEndPointReal) {
+
+            // We want to update the start point of the candidate if the last endpoint was real to ensure that the last end point is not left out
+            // We only need to apply this update when a point is isolated, since it's start and end point will be the same value.
+            if (isEndPointReal && Math.abs(candidate.start[0] - candidate.end[0]) < 1e-1) {
               candidate.start = endPoint; // Update the start point if the endpoint was real
             }
             endPoint = candidate.end;
@@ -440,6 +443,72 @@ function sortEdgesAndAddIsolatedPoints(bestEdgeSet, normalizedCoordinates) {
   return bestEdgeSetIndices;
 }
 
+function medianEdgeLength(vectors) {
+  // Create a map to store the connections
+  const pointsMap = new Map();
+
+  // Populate the map with vector connections
+  vectors.forEach(([start, end]) => {
+    if (!pointsMap.has(start)) pointsMap.set(start, new Set());
+    if (!pointsMap.has(end)) pointsMap.set(end, new Set());
+
+    pointsMap.get(start).add(end);
+    pointsMap.get(end).add(start);
+  });
+
+  // Recursive function to build edges
+  function buildEdge(start, visited) {
+    const edge = [start];
+    pointsMap.get(start).forEach((end) => {
+      if (!visited.has(end)) {
+        visited.add(end);
+        edge.push(...buildEdge(end, visited));
+      }
+    });
+    return edge;
+  }
+
+  // Find all unique edges
+  const allEdges = [];
+  const visited = new Set();
+  pointsMap.forEach((_, start) => {
+    if (!visited.has(start)) {
+      visited.add(start);
+      const edge = buildEdge(start, visited);
+      // Filter duplicates and maintain order
+      const orderedEdge = Array.from(new Set(edge));
+      if (
+        orderedEdge.length > 1 ||
+        orderedEdge[0] === orderedEdge[orderedEdge.length - 1]
+      ) {
+        allEdges.push(orderedEdge);
+      }
+    }
+  });
+
+  // Filter to keep only the longest edges
+  const finalEdges = allEdges.filter((edge) => {
+    return !allEdges.some((existingEdge) => {
+      const isSubset = edge.every((val) => existingEdge.includes(val));
+      return isSubset && existingEdge.length > edge.length;
+    });
+  });
+
+  // Get the lengths of the edges
+  const lengths = finalEdges.map(edge => edge.length);
+
+  // Sort the lengths
+  lengths.sort((a, b) => a - b);
+
+  // Calculate the median
+  const middle = Math.floor(lengths.length / 2);
+  const medianLength = lengths.length % 2 !== 0 
+    ? lengths[middle] 
+    : (lengths[middle - 1] + lengths[middle]) / 2;
+
+  return isNaN(medianLength) ? 0 : medianLength;
+}
+
 
 function averageEdgeLength(vectors) {
   // Create a map to store the connections
@@ -520,7 +589,7 @@ async function determineImageRotation(
     );
     edgesSet = limitConnections(edgesSet, normalizedCoordinates);
     edgesSet = sortEdgesAndAddIsolatedPoints(edgesSet, normalizedCoordinates);
-    let setLength = averageEdgeLength(edgesSet);
+    let setLength = medianEdgeLength(edgesSet);
     if (setLength > bestEdgeSetLength) {
       bestEdgeSetLength = setLength;
       bestEdgeSet = edgesSet;
