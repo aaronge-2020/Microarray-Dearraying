@@ -3,6 +3,7 @@ import * as d3 from "https://esm.sh/d3@7.8.5";
 import * as math from "https://esm.sh/mathjs@12.2.0";
 
 import * as Plotly from "https://cdn.jsdelivr.net/npm/plotly.js-dist/+esm";
+import { rotatePoint } from "./data_processing.js";
 
 
 function preprocessCores(cores) {
@@ -252,7 +253,7 @@ function traveling_algorithm(
         segments = segments.filter(v => v.index !== nextVector.index);
         isEndPointReal = !nextVector.isImaginary;
       } else {
-        if (!isCloseToImageWidth(endPoint, imageWidth, gamma)) {
+        if (!isCloseToImageWidth(endPoint, imageWidth, gamma, originAngle)) {
           let candidate = findCandidateInSector(segments, endPoint, radius, phi, originAngle);
           if (candidate) {
             row.push(candidate);
@@ -384,8 +385,8 @@ function pointInSector(V_prime, Vj, radius, phi, originAngle) {
 }
 
 
-function isCloseToImageWidth(point, imageWidth, gamma) {
-  return Math.abs(point[0] - imageWidth) < gamma;
+function isCloseToImageWidth(point, imageWidth, gamma, originAngle) {
+  return Math.abs(rotatePoint(point, -originAngle)[0] - imageWidth) < gamma;
 }
 function checkImaginaryPointsLimit(row) {
   let consecutiveImaginaryPoints = row.reduce((count, vec) => {
@@ -394,7 +395,7 @@ function checkImaginaryPointsLimit(row) {
 
   if (consecutiveImaginaryPoints > 50) {
     alert("Invalid hyperparameters: too many consecutive imaginary points.");
-    throw new Error("Invalid stopping distance: too many consecutive imaginary points.");
+    throw new Error("Invalid parameters: too many consecutive imaginary points.");
   }
 }
 
