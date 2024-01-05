@@ -259,9 +259,21 @@ function traveling_algorithm(
 
             // We want to update the start point of the candidate if the last endpoint was real to ensure that the last end point is not left out
             // We only need to apply this update when a point is isolated, since it's start and end point will be the same value.
-            if (isEndPointReal && Math.abs(candidate.start[0] - candidate.end[0]) < 1e-1) {
+            if (isEndPointReal && calculateDistance(candidate.start[0], candidate.end[0]) < 1e-1) {
               candidate.start = endPoint; // Update the start point if the endpoint was real
             }
+
+            // When there are two two point segments that are close to each other, the end point of the first segment will be missed, so we to add it in manually
+            if (isEndPointReal && endPoint !== candidate.start) { 
+              row.push({
+                start: endPoint,
+                end: candidate.start,
+                index: imaginaryIndex,
+                isImaginary: false,
+              });
+              imaginaryIndex--;
+            }
+
             endPoint = candidate.end;
             segments = segments.filter(v => v.index !== candidate.index);
             isEndPointReal = !candidate.isImaginary;
