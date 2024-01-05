@@ -6,7 +6,6 @@ import {
   updateSliderUIText,
   updateStatusMessage,
   resetApplication,
-  getHyperparametersFromUI
 } from "./UI.js";
 
 import { saveUpdatedCores, preprocessForTravelingAlgorithm } from "./data_processing.js";

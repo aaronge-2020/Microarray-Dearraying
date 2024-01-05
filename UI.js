@@ -47,7 +47,6 @@ const updateElementProperty = (element, property, value) => {
   element[property] = value;
 };
 
-
 function updateStatusMessage(elementId, message, statusType) {
   const statusElement = document.getElementById(elementId);
   statusElement.className = `load-status ${statusType}`; // Apply the corresponding class
@@ -86,12 +85,11 @@ function showImageSegmentationSidebar() {
 }
 
 function openEditSidebar(row, col, annotation) {
-  document.getElementById('rowInput').value = row;
-  document.getElementById('columnInput').value = col;
-  document.getElementById('annotationInput').value = annotation;
-  document.getElementById('editSidebar').style.display = 'block';
+  document.getElementById("rowInput").value = row;
+  document.getElementById("columnInput").value = col;
+  document.getElementById("annotationInput").value = annotation;
+  document.getElementById("editSidebar").style.display = "block";
 }
-
 
 function resetSlidersAndOutputs() {
   // Reset Image Parameters
@@ -154,26 +152,19 @@ function resetApplication() {
   const virtualGridCanvas = document.getElementById("virtualGridCanvas");
 
   // Clear the image element with the id processedImage
-  const processedImage = document.getElementById("processedImage");
+  const segmentationResultsCanvas = document.getElementById("segmentationResultsCanvas");
 
+  const coreCtx = coreCanvas.getContext("2d");
+  const virtualCtx = virtualGridCanvas.getContext("2d");
+  const segmentationResultsCtx = segmentationResultsCanvas.getContext("2d");
 
-  if (coreCanvas && virtualGridCanvas && processedImage) {
-    const coreCtx = coreCanvas.getContext("2d");
-    const virtualCtx = virtualGridCanvas.getContext("2d");
-    coreCtx.clearRect(0, 0, coreCanvas.width, coreCanvas.height);
-    virtualCtx.clearRect(
-      0,
-      0,
-      virtualGridCanvas.width,
-      virtualGridCanvas.height
-    );
-    processedImage.src = "";
-  }
+  coreCtx.clearRect(0, 0, coreCanvas.width, coreCanvas.height);
+  virtualCtx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
+  segmentationResultsCtx.clearRect(0, 0, segmentationResultsCanvas.width, segmentationResultsCanvas.height);
 
   // Reset the data structures that hold the core data
   window.preprocessedCores = [];
   window.sortedCoresData = [];
-  window.finalCores = [];
   window.loadedImg = null;
   window.preprocessingData = null;
 
@@ -183,7 +174,6 @@ function resetApplication() {
 
 // Main function to update visualization
 const updateSliderUIText = (state) => {
-
   updateElementProperty(
     document.getElementById("thresholdValue"),
     "textContent",
@@ -195,9 +185,7 @@ const updateSliderUIText = (state) => {
     "textContent",
     parseFloat(document.getElementById("maskAlphaSlider").value).toFixed(2)
   );
-
 };
-
 
 export {
   getHyperparametersFromUI,
@@ -208,5 +196,5 @@ export {
   showImageSegmentationSidebar,
   resetSlidersAndOutputs,
   resetApplication,
-  updateSliderUIText
-}
+  updateSliderUIText,
+};
