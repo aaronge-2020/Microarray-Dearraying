@@ -215,9 +215,12 @@ async function visualizeSegmentationResults(
     });
 }
 
-function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
+function drawCoresOnCanvasForTravelingAlgorithm() {
   const img = new Image();
-  img.src = imageSrc;
+
+  // Use the loaded image if available, otherwise use default or file input image
+  img.src = window.loadedImg.src
+
   const canvas = document.getElementById("coreCanvas");
   const ctx = canvas.getContext("2d");
   let selectedCore = null;
@@ -241,6 +244,12 @@ function drawCoresOnCanvasForTravelingAlgorithm(imageSrc) {
 
   function drawCores() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if(img.src !== window.loadedImg.src) {
+
+      img.src = window.loadedImg.src
+    }
+    
     ctx.drawImage(img, 0, 0, img.width, img.height);
     window.sortedCoresData.forEach((core, index) => {
       drawCore(core, index === selectedIndex);
@@ -680,14 +689,9 @@ async function applyAndVisualizeTravelingAlgorithm() {
       getHyperparametersFromUI()
     );
 
-    // Use the loaded image if available, otherwise use default or file input image
-    const imageSrc = window.loadedImg
-      ? window.loadedImg.src
-      : document.getElementById("fileInput").files.length > 0
-      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
-      : "path/to/default/image.jpg";
 
-    drawCoresOnCanvasForTravelingAlgorithm(imageSrc);
+
+    drawCoresOnCanvasForTravelingAlgorithm();
   } else {
     console.error("No cores data available. Please load a file first.");
   }
@@ -826,13 +830,14 @@ function updateVirtualGridSpacing(
 
 // Function to redraw the cores on the canvas
 function redrawCoresForTravelingAlgorithm() {
-  const imageFile = document.getElementById("fileInput").files[0];
-  if ((imageFile || window.loadedImg) && window.preprocessedCores) {
-    if (window.loadedImg) {
-      drawCoresOnCanvasForTravelingAlgorithm(window.loadedImg.src);
-    } else {
-      drawCoresOnCanvasForTravelingAlgorithm(URL.createObjectURL(imageFile));
-    }
+  const imageFile = window.loadedImg
+      ? window.loadedImg.src
+      : document.getElementById("fileInput").files.length > 0
+      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
+      : "path/to/default/image.jpg";
+
+  if (imageFile && window.preprocessedCores) {
+    drawCoresOnCanvasForTravelingAlgorithm();
   } else {
     alert("Please load an image first.");
   }

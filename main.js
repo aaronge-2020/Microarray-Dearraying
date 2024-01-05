@@ -58,6 +58,9 @@ const handleFileInputChange = async (e, processCallback) => {
           "success-message"
         );
         processCallback();
+
+        window.loadedImg = originalImageContainer;
+
       };
 
       originalImageContainer.onerror = () => {
@@ -71,6 +74,7 @@ const handleFileInputChange = async (e, processCallback) => {
       };
     };
     reader.readAsDataURL(file);
+
   } else {
     updateStatusMessage("imageLoadStatus",
       "File loaded is not an image.",
