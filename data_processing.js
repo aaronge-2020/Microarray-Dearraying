@@ -36,8 +36,6 @@ async function preprocessForTravelingAlgorithm() {
 
 // Function to calculate the median x coordinate of the first column
 function calculateMedianX(sortedRows, originAngle) {
-  // Convert originAngle to radians
-  originAngle = (originAngle * Math.PI) / 180;
 
   // Extract the x coordinate of the first column from each row
   let firstColumnXValues = sortedRows.map((row) => rotatePoint(row[0].point, -originAngle)[0]);
@@ -62,9 +60,6 @@ function normalizeRowsByAddingImaginaryPoints(
   originAngle,
   thresholdForImaginaryPoints = 0.4
 ) {
-
-  // Convert originAngle to radians
-  originAngle = (originAngle * Math.PI) / 180;
 
   return sortedRows.map((row) => {
     // Rotate first point to align with the x-axis
@@ -91,7 +86,6 @@ function normalizeRowsByAddingImaginaryPoints(
     // Rotate back and combine with existing points
     let normalizedRow = imaginaryPoints.concat(
       row.map((core) => {
-        let rotatedBackPoint = rotatePoint(core.point, originAngle);
         return {
           ...core,
           point: core.point,
@@ -141,9 +135,6 @@ async function runTravelingAlgorithm(normalizedCores, params) {
   );
 
   function sortRowsByRotatedPoints(rows, originAngle) {
-
-    // Convert originAngle to radians
-    originAngle = (originAngle * Math.PI) / 180;
 
     // Temporarily rotate the first point of each row for sorting purposes
     let sortingHelper = rows.map((row) => {
