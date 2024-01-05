@@ -245,10 +245,10 @@ function drawCoresOnCanvasForTravelingAlgorithm() {
   function drawCores() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if(img.src !== window.loadedImg.src) {
+    // if(img.src !== window.loadedImg.src) {
 
-      img.src = window.loadedImg.src
-    }
+    //   img.src = window.loadedImg.src
+    // }
     
     ctx.drawImage(img, 0, 0, img.width, img.height);
     window.sortedCoresData.forEach((core, index) => {
