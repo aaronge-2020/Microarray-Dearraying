@@ -201,47 +201,72 @@ function segmentationAlgorithm(
 // }
 
 async function preprocessAndPredict(imageElement, model) {
+  // Function to crop the image if it's larger than 1024x1024
+  function cropImageIfNecessary(imgElement) {
+    const maxWidth = 1024;
+    const maxHeight = 1024;
+    let [cropWidth, cropHeight] = [imgElement.width, imgElement.height];
+    let [startX, startY] = [0, 0];
 
-  // Original image dimensions
-  const originalWidth = imageElement.width;
-  const originalHeight = imageElement.height;
+    if (cropWidth > maxWidth || cropHeight > maxHeight) {
+      startX = cropWidth > maxWidth ? (cropWidth - maxWidth) / 2 : 0;
+      startY = cropHeight > maxHeight ? (cropHeight - maxHeight) / 2 : 0;
+      cropWidth = Math.min(cropWidth, maxWidth);
+      cropHeight = Math.min(cropHeight, maxHeight);
+    }
 
-  // Create a canvas for padding and resizing
-  const canvasPad = document.createElement("canvas");
-  const ctxPad = canvasPad.getContext("2d");
+    const canvasCrop = document.createElement("canvas");
+    canvasCrop.width = cropWidth;
+    canvasCrop.height = cropHeight;
+    const ctxCrop = canvasCrop.getContext("2d");
+    ctxCrop.drawImage(imgElement, startX, startY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
-  // Set canvas size to the padded size (1024x1024)
-  canvasPad.width = 1024;
-  canvasPad.height = 1024;
+    return canvasCrop;
+  }
 
-  // Draw the original image on the top-left corner of the canvas
-  ctxPad.drawImage(imageElement, 0, 0, originalWidth, originalHeight);
+  // Function to pad the image to 1024x1024
+  function padImageToSize(canvas, targetWidth, targetHeight) {
+    const canvasPadded = document.createElement("canvas");
+    canvasPadded.width = targetWidth;
+    canvasPadded.height = targetHeight;
+    const ctxPadded = canvasPadded.getContext("2d");
+    ctxPadded.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+    return canvasPadded;
+  }
 
-  // Create another canvas for the resized image
-  const canvasResize = document.createElement("canvas");
-  const ctxResize = canvasResize.getContext("2d");
-  canvasResize.width = 512;
-  canvasResize.height = 512;
+  // Function to resize the image to 512x512
+  function resizeImage(canvas, targetWidth, targetHeight) {
+    const canvasResized = document.createElement("canvas");
+    canvasResized.width = targetWidth;
+    canvasResized.height = targetHeight;
+    const ctxResized = canvasResized.getContext("2d");
+    ctxResized.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+    return canvasResized;
+  }
 
-  // Draw the padded image onto the second canvas, resizing it
-  ctxResize.drawImage(canvasPad, 0, 0, canvasResize.width, canvasResize.height);
+  // Function to convert canvas to TensorFlow tensor
+  function convertCanvasToTensor(canvas) {
+    return tf.browser
+      .fromPixels(canvas)
+      .toFloat()
+      .div(tf.scalar(255))
+      .expandDims();
+  }
 
-  // Convert the image data to a TensorFlow Tensor and normalize it
-  let tensor = tf.browser
-    .fromPixels(canvasResize)
-    .toFloat()
-    .div(tf.scalar(255))
-    .expandDims(); // Add the batch dimension
+  const croppedCanvas = cropImageIfNecessary(imageElement);
+  const paddedCanvas = padImageToSize(croppedCanvas, 1024, 1024);
+  const resizedCanvas = resizeImage(paddedCanvas, 512, 512);
+  const tensor = convertCanvasToTensor(resizedCanvas);
 
   // Predict the mask from the model
   const predictions = await model.predict(tensor);
 
   // Dispose of the tensor to free memory
-  // tensor.dispose();
+  tensor.dispose();
 
-  // Return the scaled predictions Tensor for further processing
   return predictions;
 }
+
 
 // Function to apply the threshold to the predictions
 function applyThreshold(predictions, threshold) {

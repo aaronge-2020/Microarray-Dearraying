@@ -161,6 +161,7 @@ function resetApplication() {
   coreCtx.clearRect(0, 0, coreCanvas.width, coreCanvas.height);
   virtualCtx.clearRect(0, 0, virtualGridCanvas.width, virtualGridCanvas.height);
   segmentationResultsCtx.clearRect(0, 0, segmentationResultsCanvas.width, segmentationResultsCanvas.height);
+  segmentationResultsCanvas.height = 0;
 
   // Reset the data structures that hold the core data
   window.preprocessedCores = [];

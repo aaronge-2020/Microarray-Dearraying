@@ -8,7 +8,10 @@ import {
   resetApplication,
 } from "./UI.js";
 
-import { saveUpdatedCores, preprocessForTravelingAlgorithm } from "./data_processing.js";
+import {
+  saveUpdatedCores,
+  preprocessForTravelingAlgorithm,
+} from "./data_processing.js";
 
 import { preprocessCores } from "./delaunay_triangulation.js";
 
@@ -16,15 +19,14 @@ import {
   applyAndVisualizeTravelingAlgorithm,
   updateVirtualGridSpacing,
   redrawCoresForTravelingAlgorithm,
-  obtainHyperparametersAndDrawVirtualGrid
+  obtainHyperparametersAndDrawVirtualGrid,
 } from "./drawCanvas.js";
 
 import { loadModel, runPipeline, loadOpenCV } from "./core_detection.js";
 
 // Initialize image elements
 const originalImageContainer = document.getElementById("originalImage");
-const processedImageCanvasID = "segmentationResultsCanvas"
-
+const processedImageCanvasID = "segmentationResultsCanvas";
 
 // Load dependencies and return updated state
 const loadDependencies = async () => ({
@@ -35,15 +37,12 @@ const loadDependencies = async () => ({
 // Pure function to get input values
 const getInputValue = (inputId) => document.getElementById(inputId).value;
 
-
 // Event handler for file input change
 const handleFileInputChange = async (e, processCallback) => {
-
   resetApplication();
 
-
   // Show loading spinner
-  document.getElementById('loadingSpinner').style.display = 'block';
+  document.getElementById("loadingSpinner").style.display = "block";
 
   const file = e.target.files[0];
   if (file && file.type.startsWith("image/")) {
@@ -51,20 +50,30 @@ const handleFileInputChange = async (e, processCallback) => {
     reader.onload = async (event) => {
       originalImageContainer.src = event.target.result;
       originalImageContainer.onload = async () => {
+        // If the image's width or height is greater than 1024, then alert an error and exit
+        if (
+          originalImageContainer.width > 1024 ||
+          originalImageContainer.height > 1024
+        ) {
+          alert(
+            "Image dimensions are too large. Please select an image that is less than 1024 x 1024."
+          );
+          return;
+        }
 
-        updateStatusMessage("imageLoadStatus",
+        updateStatusMessage(
+          "imageLoadStatus",
           "Image loaded successfully.",
           "success-message"
         );
         processCallback();
 
         window.loadedImg = originalImageContainer;
-
       };
 
       originalImageContainer.onerror = () => {
-
-        updateStatusMessage("imageLoadStatus",
+        updateStatusMessage(
+          "imageLoadStatus",
           "Image failed to load.",
           "error-message"
         );
@@ -73,9 +82,9 @@ const handleFileInputChange = async (e, processCallback) => {
       };
     };
     reader.readAsDataURL(file);
-
   } else {
-    updateStatusMessage("imageLoadStatus",
+    updateStatusMessage(
+      "imageLoadStatus",
       "File loaded is not an image.",
       "error-message"
     );
@@ -90,82 +99,95 @@ const getInputParameters = () => {
   const maskAlpha = parseFloat(getInputValue("maskAlphaSlider"));
   const minArea = parseInt(getInputValue("minAreaInput"), 10);
   const maxArea = parseInt(getInputValue("maxAreaInput"), 10);
-  const disTransformMultiplier = parseFloat(getInputValue("disTransformMultiplierInput"));
+  const disTransformMultiplier = parseFloat(
+    getInputValue("disTransformMultiplierInput")
+  );
 
   return {
     threshold,
     maskAlpha,
     minArea,
     maxArea,
-    disTransformMultiplier
+    disTransformMultiplier,
   };
 };
-
-
 
 // Event handler for load image from URL
 const handleLoadImageUrlClick = (state) => {
   resetApplication();
 
   // Show loading spinner
-  document.getElementById('loadingSpinner').style.display = 'block';
+  document.getElementById("loadingSpinner").style.display = "block";
 
   const imageUrl = getInputValue("imageUrlInput");
 
   if (imageUrl) {
     fetch(imageUrl)
-      .then(response => {
+      .then((response) => {
         if (response.ok) {
           return response.blob();
         } else {
-          updateStatusMessage("imageLoadStatus",
+          updateStatusMessage(
+            "imageLoadStatus",
             "Invalid image URL.",
             "error-message"
           );
-          throw new Error('Network response was not ok.');
+          throw new Error("Network response was not ok.");
         }
       })
-      .then(blob => {
+      .then((blob) => {
         let objectURL = URL.createObjectURL(blob);
         originalImageContainer.crossOrigin = "anonymous";
         originalImageContainer.src = objectURL;
 
         originalImageContainer.onload = async () => {
+          // If the image's width or height is greater than 1024, then alert an error and exit
+          if (
+            originalImageContainer.width > 1024 ||
+            originalImageContainer.height > 1024
+          ) {
+            alert(
+              "Image dimensions are too large. Please select an image that is less than 1024 x 1024."
+            );
+            return;
+          }
+
           window.loadedImg = originalImageContainer;
 
-          updateStatusMessage("imageLoadStatus",
+          updateStatusMessage(
+            "imageLoadStatus",
             "Image loaded successfully.",
             "success-message"
           );
           await segmentImage();
         };
       })
-      .catch(error => {
-        updateStatusMessage("imageLoadStatus",
+      .catch((error) => {
+        updateStatusMessage(
+          "imageLoadStatus",
           "Invalid image URL.",
           "error-message"
         );
-        console.error('There has been a problem with your fetch operation: ', error);
+        console.error(
+          "There has been a problem with your fetch operation: ",
+          error
+        );
       });
   } else {
-    updateStatusMessage("imageLoadStatus",
-      "Invalid Image.",
-      "error-message"
-    );
+    updateStatusMessage("imageLoadStatus", "Invalid Image.", "error-message");
     console.error("Please enter a valid image URL");
   }
 };
 
 async function segmentImage() {
-
-  const { threshold, maskAlpha, minArea, maxArea, disTransformMultiplier } = getInputParameters();
+  const { threshold, maskAlpha, minArea, maxArea, disTransformMultiplier } =
+    getInputParameters();
 
   if (
     originalImageContainer.src &&
     originalImageContainer.src[originalImageContainer.src.length - 1] !== "#"
   ) {
     try {
-
       await runPipeline(
         originalImageContainer,
         window.state.model,
@@ -180,14 +202,12 @@ async function segmentImage() {
       window.preprocessedCores = preprocessCores(window.properties);
 
       // preprocessForTravelingAlgorithm(originalImageContainer);
-
     } catch (error) {
-      console.error('Error processing image:', error);
+      console.error("Error processing image:", error);
     } finally {
       // Hide loading spinner
-      document.getElementById('loadingSpinner').style.display = 'none';
+      document.getElementById("loadingSpinner").style.display = "none";
     }
-
   }
 }
 
@@ -305,11 +325,8 @@ function bindEventListeners() {
 
       // Change the defaultRadius value of each core in window.sortedCores to the new radius
       window.sortedCoresData.forEach((core) => {
-
         core.currentRadius = parseInt(userRadius);
-
       });
-
     } else {
       alert("Please load an image and JSON file first.");
     }
@@ -356,8 +373,6 @@ const initSegmentation = async () => {
       a.click();
       URL.revokeObjectURL(url);
     });
-
-
 
   document
     .getElementById("applySegmentation")

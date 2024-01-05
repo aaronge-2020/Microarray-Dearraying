@@ -218,8 +218,8 @@ async function visualizeSegmentationResults(
 function drawCoresOnCanvasForTravelingAlgorithm() {
   const img = new Image();
 
-  // Use the loaded image if available, otherwise use default or file input image
-  img.src = window.loadedImg.src
+  img.src = window.loadedImg.src;
+  let imageNeedsUpdate = true;
 
   const canvas = document.getElementById("coreCanvas");
   const ctx = canvas.getContext("2d");
@@ -239,16 +239,29 @@ function drawCoresOnCanvasForTravelingAlgorithm() {
   let tempCoreOffsetY = 0;
 
   img.onload = () => {
+    imageNeedsUpdate = false;
     drawCores();
   };
+  
+  function updateImageSource() {
+    if (window.loadedImg.src !== img.src) {
+      img.src = window.loadedImg.src;
+      imageNeedsUpdate = true;
+    }
+  }
 
   function drawCores() {
+    if (imageNeedsUpdate) {
+      updateImageSource();
+      return; // Exit the function and wait for the image to load
+    }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // if(img.src !== window.loadedImg.src) {
+    if(img.src !== window.loadedImg.src) {
 
-    //   img.src = window.loadedImg.src
-    // }
+      img.src = window.loadedImg.src
+    }
     
     ctx.drawImage(img, 0, 0, img.width, img.height);
     window.sortedCoresData.forEach((core, index) => {
