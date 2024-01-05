@@ -58,7 +58,7 @@ function normalizeRowsByAddingImaginaryPoints(
   medianX,
   gridWidth,
   originAngle,
-  thresholdForImaginaryPoints = 0.4
+  thresholdForImaginaryPoints = 0.6
 ) {
 
   return sortedRows.map((row) => {

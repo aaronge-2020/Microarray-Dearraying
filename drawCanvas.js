@@ -242,7 +242,7 @@ function drawCoresOnCanvasForTravelingAlgorithm() {
     imageNeedsUpdate = false;
     drawCores();
   };
-  
+
   function updateImageSource() {
     if (window.loadedImg.src !== img.src) {
       img.src = window.loadedImg.src;
@@ -258,11 +258,10 @@ function drawCoresOnCanvasForTravelingAlgorithm() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if(img.src !== window.loadedImg.src) {
-
-      img.src = window.loadedImg.src
+    if (img.src !== window.loadedImg.src) {
+      img.src = window.loadedImg.src;
     }
-    
+
     ctx.drawImage(img, 0, 0, img.width, img.height);
     window.sortedCoresData.forEach((core, index) => {
       drawCore(core, index === selectedIndex);
@@ -372,9 +371,24 @@ function drawCoresOnCanvasForTravelingAlgorithm() {
     } else {
       const mouseX = event.offsetX;
       const mouseY = event.offsetY;
+
+      // Assume canvas is the reference to your canvas element
+      const canvas = document.getElementById("coreCanvas"); // make sure 'coreCanvas' is the correct id
+
+      // Get the bounding rectangle of the canvas
+      const rect = canvas.getBoundingClientRect();
+
+      // Calculate scale factors based on the actual size of the canvas
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      // Adjust mouse coordinates with scale factors
+      const adjustedX = (event.clientX - rect.left) * scaleX;
+      const adjustedY = (event.clientY - rect.top) * scaleY;
+
       selectedIndex = window.sortedCoresData.findIndex(
         (core) =>
-          Math.sqrt((core.x - mouseX) ** 2 + (core.y - mouseY) ** 2) <
+          Math.sqrt((core.x - adjustedX) ** 2 + (core.y - adjustedY) ** 2) <
           core.currentRadius
       );
 
@@ -521,7 +535,6 @@ function drawCoresOnCanvasForTravelingAlgorithm() {
         if (document.getElementById("addAutoUpdateColumnsCheckbox").checked) {
           updateColumnsInRowAfterModification(core.row);
           updateColumnsInRowAfterModification(oldRow);
-
         }
 
         drawCores(); // Redraw the cores with the updated data
@@ -630,27 +643,31 @@ function drawCoresOnCanvasForTravelingAlgorithm() {
 
   // Add event listeners for mode switching buttons (assumes buttons exist in your HTML)
   // Call clearTempCore when necessary, such as when switching modes
-  document.getElementById("switchToEditMode").addEventListener("click", (event) => {
-    event.target.classList.add("active");
-    document.getElementById("switchToAddMode").classList.remove("active");
-    switchMode("edit");
-    isSettingSize = false;
-    clearTempCore();
-    // Add 'edit-mode' class and remove 'add-mode' class
-    coreCanvasElement.classList.add("edit-mode");
-    coreCanvasElement.classList.remove("add-mode");
-  });
+  document
+    .getElementById("switchToEditMode")
+    .addEventListener("click", (event) => {
+      event.target.classList.add("active");
+      document.getElementById("switchToAddMode").classList.remove("active");
+      switchMode("edit");
+      isSettingSize = false;
+      clearTempCore();
+      // Add 'edit-mode' class and remove 'add-mode' class
+      coreCanvasElement.classList.add("edit-mode");
+      coreCanvasElement.classList.remove("add-mode");
+    });
 
-  document.getElementById("switchToAddMode").addEventListener("click", (event) => {
-    event.target.classList.add("active");
-    document.getElementById("switchToEditMode").classList.remove("active");
-    switchMode("add");
-    isSettingSize = false;
-    clearTempCore();
-    // Add 'add-mode' class and remove 'edit-mode' class
-    coreCanvasElement.classList.add("add-mode");
-    coreCanvasElement.classList.remove("edit-mode");
-  });
+  document
+    .getElementById("switchToAddMode")
+    .addEventListener("click", (event) => {
+      event.target.classList.add("active");
+      document.getElementById("switchToEditMode").classList.remove("active");
+      switchMode("add");
+      isSettingSize = false;
+      clearTempCore();
+      // Add 'add-mode' class and remove 'edit-mode' class
+      coreCanvasElement.classList.add("add-mode");
+      coreCanvasElement.classList.remove("edit-mode");
+    });
 
   document
     .getElementById("removeCoreButton")
@@ -701,8 +718,6 @@ async function applyAndVisualizeTravelingAlgorithm() {
       window.preprocessedCores,
       getHyperparametersFromUI()
     );
-
-
 
     drawCoresOnCanvasForTravelingAlgorithm();
   } else {
@@ -844,10 +859,10 @@ function updateVirtualGridSpacing(
 // Function to redraw the cores on the canvas
 function redrawCoresForTravelingAlgorithm() {
   const imageFile = window.loadedImg
-      ? window.loadedImg.src
-      : document.getElementById("fileInput").files.length > 0
-      ? URL.createObjectURL(document.getElementById("fileInput").files[0])
-      : "path/to/default/image.jpg";
+    ? window.loadedImg.src
+    : document.getElementById("fileInput").files.length > 0
+    ? URL.createObjectURL(document.getElementById("fileInput").files[0])
+    : "path/to/default/image.jpg";
 
   if (imageFile && window.preprocessedCores) {
     drawCoresOnCanvasForTravelingAlgorithm();
