@@ -61,7 +61,7 @@ function normalizeRowsByAddingImaginaryPoints(
   thresholdForImaginaryPoints = 0.6
 ) {
 
-  return sortedRows.map((row) => {
+  return sortedRows.map((row, index) => {
     // Rotate first point to align with the x-axis
     let rotatedFirstPoint = rotatePoint(row[0].point, -originAngle);
 
@@ -69,19 +69,20 @@ function normalizeRowsByAddingImaginaryPoints(
     let offsetX = rotatedFirstPoint[0] - medianX;
 
     // Determine the number of imaginary points to add
-    let imaginaryPointsCount = Math.max(0, Math.floor((offsetX/gridWidth) + thresholdForImaginaryPoints));
+    let imaginaryPointsCount = Math.max(0, Math.floor((offsetX / gridWidth) + thresholdForImaginaryPoints));
 
     // Generate imaginary points
     let imaginaryPoints = [];
-    for (let i = 0; i < imaginaryPointsCount; i++) {
+    for (let i = imaginaryPointsCount - 1; i >= 0; i--) {
       imaginaryPoints.push({
         point: rotatePoint([rotatedFirstPoint[0] - (i + 1) * gridWidth, rotatedFirstPoint[1]], originAngle),
-        row: row[0].row,
+        row: index,
         col: imaginaryPointsCount - 1 - i,
         isImaginary: true,
         annotations: "",
       });
     }
+
 
     // Rotate back and combine with existing points
     let normalizedRow = imaginaryPoints.concat(
@@ -176,7 +177,7 @@ async function runTravelingAlgorithm(normalizedCores, params) {
         row: rowIndex,
         col: colIndex,
         currentRadius: parseInt(userRadius),
-        isImaginary: core.isImaginary ,
+        isImaginary: core.isImaginary,
         annotations: "",
       });
     });
